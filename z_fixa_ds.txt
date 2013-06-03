@@ -164,8 +164,6 @@ z_fixa_ds01:--z_fixa_ds01
 		close cursor_table2
 		deallocate cursor_table2
 		
-		
-		
 		fetch next from cursor_table
 		into @tablea,@noa
 	end
