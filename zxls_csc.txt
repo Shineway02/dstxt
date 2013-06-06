@@ -44,7 +44,7 @@ zxls_csc:--zxls_csc
 	declare @count int
 	set @count = 0
 	declare cursor_table cursor for
-	select a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r from ztmpxls order by noa
+	select a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r from ztmpxls order by cast(s as int)
 	open cursor_table
 	fetch next from cursor_table
 	into @a,@b,@c,@d,@e,@f,@g,@h,@i,@j,@k,@l,@m,@n,@o,@p,@q,@r
