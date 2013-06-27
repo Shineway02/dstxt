@@ -5,193 +5,120 @@ z_fixa_ds01:--z_fixa_ds01
 	declare @t_name nvarchar(20)
 	declare @t_bdate nvarchar(10)
 	declare @t_edate nvarchar(10)
-	declare @t_bmon	nvarchar(10)
-	declare @t_emon nvarchar(10)
 	declare @t_btggno nvarchar(20)
 	declare @t_etggno nvarchar(20)
 	declare @t_carno nvarchar(20)
-	declare @t_carplateno nvarchar(20)
-	declare @t_xmoney float
+	declare @limit float
+	declare @detail01 nvarchar(max)
 	
 	set @t_accy = '[1]'
 	set @t_name = '[2]'
 	set @t_bdate = case when '#non'=[3] then '' else [3] end
 	set @t_edate = case when '#non'=[4] then CHAR(255) else [4] end
-	set @t_bmon = case when '#non'=[5] then '' else [5] end
-	set @t_emon = case when '#non'=[6] then CHAR(255) else [6] end
-	set @t_btggno = case when '#non'=[7] then '' else [7] end
-	set @t_etggno = case when '#non'=[8] then CHAR(255) else [8] end
-	set @t_carno = case when '#non'=[9] then '' else [9] end
-	set @t_carplateno = case when '#non'=[10] then '' else [10] end
-	set @t_xmoney = case when '#non'=[11] then '' else [11] end
+	set @t_btggno = case when '#non'=[5] then '' else [5] end
+	set @t_etggno = case when '#non'=[6] then CHAR(255) else [6] end
+	set @t_carno = case when '#non'=[7] then '' else [7] end
+	set @limit = CAST(case when '#non'=[8] then '0' else [8] end AS FLOAT)
+	set @detail01 = case when '#non'=[9] then '' else [9] end
 	------------------------------------------------------------------------
 	declare @tmp table(
-		tablea nvarchar(20),
-		noa nvarchar(20),
-		datea nvarchar(10),
-		mon nvarchar(10),
-		tggno nvarchar(20),
-		tgg nvarchar(40),
-		carno nvarchar(20),
-		carplateno nvarchar(20),
-		wmoney float,
-		cmoney float,
-		dmoney float,
-		invono nvarchar(max),
-		tax float,
-		discount float,
-		total float,
-		memo nvarchar(max)
-	)
-	declare @tmps table(
-		noa nvarchar(20),
-		noq nvarchar(10),
-		productno nvarchar(20),
-		product nvarchar(max),
-		mount float,
-		price float,
-		[money] float
-	)
-
-	insert into @tmp
-	select 'fixa',noa,fixadate,mon,tggno,tgg,carno,carplateno
-	,wmoney,cmoney,dmoney,invono,tax,discount,total,memo
-	from fixa 
-	where (ISNULL(fixadate,'') between @t_bdate and @t_edate)
-	and (ISNULL(mon,'') between @t_bmon and @t_emon)
-	and (len(@t_carno)=0 or ISNULL(carno,'')=@t_carno)
-	and (len(@t_carplateno)=0 or ISNULL(carplateno,'')=@t_carplateno)
-	and (isnull(tggno,'') between @t_btggno and @t_etggno)
-	
-	insert into @tmp
-	select 'fixin',noa,indate,mon,tggno,tgg,'',''
-	,wmoney,cmoney,dmoney,invono,tax,discount,total,memo
-	from fixin
-	where (ISNULL(indate,'') between @t_bdate and @t_edate)
-	and (ISNULL(mon,'') between @t_bmon and @t_emon)
-	and (len(@t_carno)=0)
-	and (len(@t_carplateno)=0)
-	and (isnull(tggno,'') between @t_btggno and @t_etggno)
-		
-	insert into @tmps
-	select a.noa,a.noq,a.productno,a.product,a.mount,a.price,a.[money]  
-	from fixas a
-	left join @tmp b on b.tablea='fixa' and a.noa=b.noa
-	where b.noa is not null and ISNULL(a.[money],0)>=@t_xmoney
-	
-	insert into @tmps
-	select a.noa,a.noq,a.productno,a.product,a.mount,a.price,a.[money]  
-	from fixins a
-	left join @tmp b on b.tablea='fixin' and a.noa=b.noa
-	where b.noa is not null and ISNULL(a.[money],0)>=@t_xmoney
-	-------------------------------------------------------------------------------------
-	declare @result table(
+		gno nvarchar(10),
 		pno nvarchar(10),
-		gno nvarchar(20),
+		
 		tablea nvarchar(20),
 		noa nvarchar(20),
 		datea nvarchar(10),
-		mon nvarchar(10),
 		tggno nvarchar(20),
-		tgg nvarchar(40),
+		tgg	nvarchar(50),
 		carno nvarchar(20),
-		carplateno nvarchar(20),
 		wmoney float,
 		cmoney float,
 		dmoney float,
-		invono nvarchar(max),
 		tax float,
 		discount float,
 		total float,
-		memo nvarchar(max),
-		noq nvarchar(10),
+		
+		tireno nvarchar(20),
 		productno nvarchar(20),
-		product nvarchar(max),
-		mount float,
-		price float,
+		product nvarchar(50),
+		mount decimal(15,3),
+		price decimal(15,3),
 		[money] float
 	)
-	-----------------------------
-	declare @n int
-	declare @tablea nvarchar(20)
-	declare @noa nvarchar(20)
 	
-	declare @noq nvarchar(20)
-	declare @productno nvarchar(20)
-	declare @product nvarchar(40)
-	declare @mount float
-	declare @price float
-	declare @money float
+	insert into @tmp
+	select '1','1','fixa',a.noa,a.fixadate,a.tggno,a.tgg,a.carno,a.wmoney,a.cmoney,a.dmoney,a.tax,a.discount,a.total
+	,'','','',null,null,null
+	from fixa a 
+	where a.fixadate between @t_bdate and @t_edate
+	union all
+	select '1','2','fixin',a.noa,a.indate,a.tggno,a.tgg,'' carno,a.wmoney,a.cmoney,a.dmoney,a.tax,a.discount,a.total
+	,'','','',null,null,null
+	from fixin a 
+	where a.indate between @t_bdate and @t_edate
+	union all
+	select '1','3','fixout',a.noa,a.outdate,'' tggno,'' tgg,a.carno,a.wmoney,a.cmoney,a.dmoney,0,0,a.[money]
+	,'','','',null,null,null
+	from fixout a 
+	where a.outdate between @t_bdate and @t_edate
 	
-	declare cursor_table cursor for
-	select tablea,noa from @tmp
-	open cursor_table
-	fetch next from cursor_table
-	into @tablea,@noa
-	while(@@FETCH_STATUS <> -1)
+	-------------------------------------------------------------------------------------------
+	if(@detail01='detail')
 	begin
-		insert into @result(pno,gno,tablea,noa,datea,mon,tggno,tgg,carno,carplateno
-		,wmoney,cmoney,dmoney,invono,tax,discount,total,memo)
-		select '1','1',
-		tablea,noa,datea,mon,tggno,tgg,carno,carplateno
-		,wmoney,cmoney,dmoney,invono,tax,discount,total,memo
-		from @tmp where tablea=@tablea and noa=@noa
-	
-		set @n = 0
-		declare cursor_table2 cursor for
-		select noq,productno,product,mount,price,[money] from @tmps where noa=@noa order by noq
-		open cursor_table2
-		fetch next from cursor_table2
-		into @noq,@productno,@product,@mount,@price,@money
-		while(@@FETCH_STATUS <> -1)
-		begin
-			if(@n=0) and exists(select * from @result where noa=@noa and gno='1' and noq is null)
-			begin
-				update @result set noq=@noq,productno=@productno,product=@product 
-				,mount=@mount,price=@price,[money]=@money
-				where noa=@noa and gno='1'
-			end
-			else
-			begin				
-				insert into @result(tablea,pno,gno,noa,noq,productno,product,price,mount,[money])
-				select @tablea,'1','2',@noa,@noq,@productno,@product,@price,@mount,@money 
-				from @tmps where noa=@noa and noq=@noq
-			end
-			set @n = @n + 1
-			fetch next from cursor_table2
-			into @noq,@productno,@product,@mount,@price,@money
-		end
-		close cursor_table2
-		deallocate cursor_table2
-		
-		fetch next from cursor_table
-		into @tablea,@noa
+		insert into @tmp(gno,pno,tablea,noa,productno,product,mount,price,[money])
+				select '2','1','fixa',a.noa,a.productno,a.product,a.mount,a.price,a.[money] 
+				from fixas a 
+				left join @tmp b on b.tablea='fixa' and a.noa=b.noa
+				where (b.noa is not null) and ISNULL(a.[money],0)>=@limit	
+				and (b.tggno between @t_btggno and @t_etggno)
+				and (len(@t_carno)=0 or b.carno=@t_carno)
+		insert into @tmp(gno,pno,tablea,noa,productno,product,mount,price,[money])
+				select '2','2','fixin',a.noa,a.productno,a.product,a.mount,a.price,a.[money] 
+				from fixins a 
+				left join @tmp b on b.tablea='fixin' and a.noa=b.noa
+				where (b.noa is not null) and ISNULL(a.[money],0)>=@limit	
+				and (b.tggno between @t_btggno and @t_etggno)
+				--and (len(@t_carno)=0 or b.carno=@t_carno)
+		insert into @tmp(gno,pno,tablea,noa,productno,product,mount,price,[money])
+				select '2','3','fixout',a.noa,a.productno,a.product,a.mount,a.price,a.[money] 
+				from fixouts a 
+				left join @tmp b on b.tablea='fixout' and a.noa=b.noa
+				where (b.noa is not null) and ISNULL(a.[money],0)>=@limit	
+				--and (b.tggno between @t_btggno and @t_etggno)
+				and (len(@t_carno)=0 or b.carno=@t_carno)
 	end
-	close cursor_table
-	deallocate cursor_table
-	------------------------------------------------------------
-	insert into @result(pno,gno,carno,wmoney,cmoney,dmoney,tax,discount,total)
-	select '2','3','車輛',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0))
+	--fixa
+	insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,tax,discount,total)
+	select '3','5','維修',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0))
 	,SUM(ISNULL(tax,0)),SUM(ISNULL(discount,0)),SUM(ISNULL(total,0))
-	from @result where gno='1' and len(ISNULL(carplateno,''))=0
-	insert into @result(pno,gno,carno,wmoney,cmoney,dmoney,tax,discount,total)
-	select '2','3','板台',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0))
+	from @tmp where gno='1' and tablea='fixa'
+	--fixin
+	insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,tax,discount,total)
+	select '3','6','進貨',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0))
 	,SUM(ISNULL(tax,0)),SUM(ISNULL(discount,0)),SUM(ISNULL(total,0))
-	from @result where gno='1' and len(ISNULL(carplateno,''))>0
-	insert into @result(pno,gno,carno,wmoney,cmoney,dmoney,tax,discount,total)
-	select '2','3','小計',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0))
+	from @tmp where gno='1' and tablea='fixin'
+	--fixout
+	insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,tax,discount,total)
+	select '3','7','領料',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0))
 	,SUM(ISNULL(tax,0)),SUM(ISNULL(discount,0)),SUM(ISNULL(total,0))
-	from @result where gno='1'
+	from @tmp where gno='1' and tablea='fixout'
+	--total
+	--insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,tax,discount,total)
+	--select '3','8','總計',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0))
+	--,SUM(ISNULL(tax,0)),SUM(ISNULL(discount,0)),SUM(ISNULL(total,0))
+	--from @tmp where gno='1'
 	
-	select *
-	,carplateno cpno
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,[wmoney]),1)),4,12)) m1
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,[cmoney]),1)),4,12)) m2
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,[dmoney]),1)),4,12)) m3
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,[tax]),1)),4,12)) m4
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,[discount]),1)),4,12)) m5
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,[total]),1)),4,12)) m6
-	,convert(nvarchar(15),CONVERT(money,[mount]),1) m7
-	,convert(nvarchar(15),CONVERT(money,[price]),1) m8
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,[money]),1)),4,12)) m9
-	from @result order by pno,noa;
+	select a.* 
+	,b.nick nick
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,wmoney),1)),4,12)) wm
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,dmoney),1)),4,12)) dm
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,cmoney),1)),4,12)) cm
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,tax),1)),4,12)) tt
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,discount),1)),4,12)) dis
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total),1)),4,12)) tot
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(mount)),1)),4,12))+'.'+RIGHT(CAST(mount as nvarchar),3) mt
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price)),1)),4,12))+'.'+RIGHT(CAST(price as nvarchar),3) pe
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,[money]),1)),4,12)) my
+	from @tmp a
+	left join tgg b on a.tggno=b.noa
+	order by a.pno,a.tablea,a.noa,a.gno;
