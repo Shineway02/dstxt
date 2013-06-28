@@ -19,7 +19,12 @@ z_fixa_ds04:--z_fixa_ds04
 	set @t_btggno = case when '#non'=[5] then '' else [5] end
 	set @t_etggno = case when '#non'=[6] then CHAR(255) else [6] end
 	set @t_carno = case when '#non'=[7] then '' else [7] end
-	set @limit = CAST(case when '#non'=[8] then '0' else [8] end AS FLOAT)
+	BEGIN TRY
+		set @limit = CAST(case when '#non'=[8] then '0' else [8] end AS FLOAT)
+	END TRY
+	BEGIN CATCH
+		set @limit = 0
+	END CATCH
 	set @detail01 = case when '#non'=[9] then '' else [9] end
 	set @t_tireno = case when '#non'=[10] then '' else [10] end
 	------------------------------------------------------------------------
@@ -135,7 +140,12 @@ z_fixa_ds01:--z_fixa_ds01
 	set @t_btggno = case when '#non'=[5] then '' else [5] end
 	set @t_etggno = case when '#non'=[6] then CHAR(255) else [6] end
 	set @t_carno = case when '#non'=[7] then '' else [7] end
-	set @limit = CAST(case when '#non'=[8] then '0' else [8] end AS FLOAT)
+	BEGIN TRY
+		set @limit = CAST(case when '#non'=[8] then '0' else [8] end AS FLOAT)
+	END TRY
+	BEGIN CATCH
+		set @limit = 0
+	END CATCH
 	set @detail01 = case when '#non'=[9] then '' else [9] end
 	------------------------------------------------------------------------
 	declare @tmp table(
@@ -160,12 +170,17 @@ z_fixa_ds01:--z_fixa_ds01
 		product nvarchar(50),
 		mount decimal(15,3),
 		price decimal(15,3),
-		[money] float
+		[money] float,
+		
+		position nvarchar(10),
+		btireno nvarchar(40),
+		[action] nvarchar(10),
+		etireno nvarchar(40),
+		memos nvarchar(max)
 	)
 	
-	insert into @tmp
+	insert into @tmp(gno,pno,tablea,noa,datea,tggno,tgg,carno,wmoney,cmoney,dmoney,tax,discount,total)
 	select '1','1','fixa',a.noa,a.fixadate,a.tggno,a.tgg,a.carno,a.wmoney,a.cmoney,a.dmoney,a.tax,a.discount,a.total
-	,'','','',null,null,null
 	from fixa a 
 	where charindex('fixa',@detail01)>0
 		and a.fixadate between @t_bdate and @t_edate
@@ -173,19 +188,24 @@ z_fixa_ds01:--z_fixa_ds01
 		and (len(@t_carno)=0 or a.carno=@t_carno)
 	union all
 	select '1','2','fixin',a.noa,a.indate,a.tggno,a.tgg,'' carno,a.wmoney,a.cmoney,a.dmoney,a.tax,a.discount,a.total
-	,'','','',null,null,null
 	from fixin a 
 	where charindex('fixin',@detail01)>0
 		and a.indate between @t_bdate and @t_edate
 		and (a.tggno between @t_btggno and @t_etggno)
 	union all
 	select '1','3','fixout',a.noa,a.outdate,'' tggno,'' tgg,a.carno,a.wmoney,a.cmoney,a.dmoney,0,0,a.[money]
-	,'','','',null,null,null
 	from fixout a 
 	where charindex('fixout',@detail01)>0
 		and a.outdate between @t_bdate and @t_edate
 		and (len(@t_carno)=0 or a.carno=@t_carno)
-	
+	union all
+	select '1','3','tire',a.noa,a.datea,a.tggno,a.tgg,a.carno,a.wmoney,a.cmoney,a.dmoney,0,0,ISNULL(a.wmoney,0)+ISNULL(a.cmoney,0)+ISNULL(a.dmoney,0)
+	from tire a 
+	where charindex('tire',@detail01)>0
+		and a.datea between @t_bdate and @t_edate
+		and (a.tggno between @t_btggno and @t_etggno)
+		and (len(@t_carno)=0 or a.carno=@t_carno)
+
 	-------------------------------------------------------------------------------------------
 	if(charindex('detail',@detail01)>0)
 	begin
@@ -204,6 +224,12 @@ z_fixa_ds01:--z_fixa_ds01
 				from fixouts a 
 				left join @tmp b on b.tablea='fixout' and a.noa=b.noa
 				where (b.noa is not null) and ISNULL(a.[money],0)>=@limit	
+		insert into @tmp(gno,pno,tablea,noa,position,btireno,[action],etireno,price,memos)
+				select '5','4','tire',a.noa,a.position,a.btireno,a.[action],a.etireno,a.price,a.memo 
+				from tires a 
+				left join @tmp b on b.tablea='tire' and a.noa=b.noa
+				where (b.noa is not null) and ISNULL(a.price,0)>=@limit
+				and len(a.etireno)>0
 	end
 	--fixa
 	if(charindex('fixa',@detail01)>0)
@@ -229,9 +255,17 @@ z_fixa_ds01:--z_fixa_ds01
 		,SUM(ISNULL(tax,0)),SUM(ISNULL(discount,0)),SUM(ISNULL(total,0))
 		from @tmp where gno='1' and tablea='fixout'
 	end
+	--tire
+	if(charindex('tire',@detail01)>0)
+	begin
+		insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,tax,discount,total)
+		select '3','8','換補',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0))
+		,SUM(ISNULL(tax,0)),SUM(ISNULL(discount,0)),SUM(ISNULL(total,0))
+		from @tmp where gno='1' and tablea='tire'
+	end
 	--total
 	insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,tax,discount,total)
-	select '3','8','總計',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0))
+	select '4','9','總計',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0))
 	,SUM(ISNULL(tax,0)),SUM(ISNULL(discount,0)),SUM(ISNULL(total,0))
 	from @tmp where gno='1'
 	
