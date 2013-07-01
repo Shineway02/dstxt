@@ -113,15 +113,17 @@ zxls_csc:--zxls_csc
 
 	insert into carcsc (noa,datea,trandate,mon,carno,driverno,driver,addrno,addr
 	,calctype,discount,[weight],inprice,inmount,inmoney,outprice,outmount,outmoney
-	,boatno,custno,comp,nick,uccno,product,memo)
+	,boatno,custno,comp,nick,uccno,product,memo,tggno,tgg)
 	select a.noa,a.datea,a.trandate,a.mon
 	,a.carno,b.driverno,c.namea,a.straddrno,d.addr
 	,a.calctype,a.discount,a.[weight] 
 	,a.inprice,a.inmount,a.inmoney,a.outprice,a.outmount,a.outmoney
 	,a.shipno,a.custno,e.comp,e.nick,a.uccno,f.product,a.memo
+	,g.noa,g.comp
 	from @tmp a
 	left join car2 b on a.carno=b.carno
 	left join driver c on b.driverno=c.noa	
 	left join addr d on a.straddrno=d.noa
 	left join cust e on a.custno=e.noa
-	left join ucc f on a.uccno=f.noa;
+	left join ucc f on a.uccno=f.noa
+	left join tgg g on len(a.memo)>0 and g.nick=a.memo;
