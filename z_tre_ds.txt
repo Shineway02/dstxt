@@ -55,6 +55,7 @@ z_tre_ds01:--z_tre_ds01
 		trannoq nvarchar(10),
 		datea nvarchar(10),
 		trandate nvarchar(10),
+		trecarchgno nvarchar(max),
 		
 		carno nvarchar(20),
 		driverno nvarchar(20),
@@ -105,7 +106,7 @@ z_tre_ds01:--z_tre_ds01
 
 	set @cmd = 
 	" select '1',b.noa,a.tranno,a.trannoq,d.datea,d.trandate,d.carno,d.driverno,d.driver,b.carteamno,g.team"+
-	"	,b.tggno,b.tgg,e.nick,d.custno,f.comp,f.nick,d.straddrno,d.straddr,d.uccno,d.product"+
+	"	,b.carchgno,isnull(b.tggno,''),b.tgg,e.nick,d.custno,f.comp,f.nick,d.straddrno,d.straddr,d.uccno,d.product"+
 	"	,d.inmount,d.pton,d.mount,d.price,d.total"+
 	"	,d.outmount,d.pton2,d.mount2,d.price2,d.price3,d.discount,d.total2"+
 	"	,d.tolls,d.memo"+
@@ -120,7 +121,7 @@ z_tre_ds01:--z_tre_ds01
 	" and (isnull(b.datea,0) between @t_bdate and @t_edate)"+
 	" and (isnull(b.tggno,0) between @t_btggno and @t_etggno)"
 	insert into #z_tre_ds01(pno,treno,tranno,trannoq,datea,trandate,carno,driverno,driver,carteamno,carteam
-		,tggno,tgg,tggnick,custno,cust,custnick,addrno,addr,productno,product
+		,trecarchgno,tggno,tgg,tggnick,custno,cust,custnick,addrno,addr,productno,product
 		,inmount,pton,mount,price,total
 		,outmount,pton2,mount2,price2,price3,discount,total2
 		,tolls,memo)
@@ -134,9 +135,7 @@ z_tre_ds01:--z_tre_ds01
 	declare @tggnick nvarchar(20)
 	
 	declare cursor_table cursor for
-	select a.noa,a.carchgno from view_tre102 a
-	left join (select treno from #z_tre_ds01 group by treno) b on a.noa=b.treno
-	where (b.treno is not null) and len(ISNULL(a.carchgno,''))>0
+	select treno,trecarchgno from #z_tre_ds01 where len(ISNULL(trecarchgno,''))>0 group by treno,trecarchgno
 	open cursor_table
 	fetch next from cursor_table
 	into @treno,@carchgno
@@ -247,14 +246,17 @@ z_tre_ds01:--z_tre_ds01
 	into @tggno,@tgg,@tggnick
 	while(@@FETCH_STATUS <> -1)
 	begin
+		set @page=0
 		set @curline = 0
 		set @recno = 0
+		set @n = 0
 		--出車明細		
 		if exists(select * from #z_tre_ds01 where tggno=@tggno and pno='1')
 		begin
 			insert into @tmp(page,n,gno,tggno,tgg,tggnick)
-			select @page,@curline%@rowline,'1',@tggno,@tgg,@tggnick
+			select @page,@n%@rowline,'1',@tggno,@tgg,@tggnick
 			set @curline = @curline + 1
+			set @n = @n + 1
 		end
 		declare cursor_table2 cursor for
 		select trandate,carno,addr,product,mount2,isnull(price2,0)+isnull(price3,0),total2,memo
@@ -267,20 +269,22 @@ z_tre_ds01:--z_tre_ds01
 		begin
 			insert into @tmp(page,n,gno,tggno,tgg,tggnick
 			,g31,g32,g33,g34,g35,g36,g37,g38,g39)
-			values(@page,@curline%@rowline,'3',@tggno,@tgg,@tggnick
+			values(@page,@n%@rowline,'4',@tggno,@tgg,@tggnick
 			,CAST(@recno+1 as nvarchar),@trandate,@carno,@addr,@product
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@mount)),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3) 
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@price)),1)),4,12))+'.'+RIGHT(CAST(@price as nvarchar),3) 
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@total),1)),4,12)),@memo)
 			set @recno = @recno + 1
 			set @curline = @curline + 1
+			set @n = @n + 1
 			
 			if(@curline%@rowline=0)
 			begin	
 				set @page = @page + 1
 				insert into @tmp(page,n,gno,tggno,tgg,tggnick)
-				select @page,@curline%@rowline,'1',@tggno,@tgg,@tggnick
+				select @page,@n%@rowline,'1',@tggno,@tgg,@tggnick
 				set @curline = @curline + 1
+				set @n = @n + 1
 			end
 			fetch next from cursor_table2
 			into @trandate,@carno,@addr,@product,@mount,@price,@total,@memo
@@ -293,16 +297,18 @@ z_tre_ds01:--z_tre_ds01
 			if(@curline%@rowline=@rowline-1)
 			begin
 				insert into @tmp(page,n,gno,tggno,tgg,tggnick)
-				values(@page,@curline%@rowline,'0',@tggno,@tgg,@tggnick)
+				values(@page,@n%@rowline,'0',@tggno,@tgg,@tggnick)
 				set @recno = @recno + 1
 				set @curline = @curline + 1
 				set @page = @page + 1
+				set @n = @n + 1
 			end
 		
 			insert into @tmp(page,n,gno,tggno,tgg,tggnick)
-			select @page,@curline%@rowline,'2',@tggno,@tgg,@tggnick
+			select @page,@n%@rowline,'2',@tggno,@tgg,@tggnick
 			set @curline = @curline + 1
 			set @recno = 0
+			set @n = @n + 1
 		end
 		declare cursor_table2 cursor for
 		select datea2,ltrim(rtrim(plusitem))+ltrim(rtrim(minusitem)),plusmoney,minusmoney,memo2
@@ -315,19 +321,21 @@ z_tre_ds01:--z_tre_ds01
 		begin
 			insert into @tmp(page,n,gno,tggno,tgg,tggnick
 			,g41,g42,g43,g44,g45,g46)
-			values(@page,@curline%@rowline,'4',@tggno,@tgg,@tggnick
+			values(@page,@n%@rowline,'5',@tggno,@tgg,@tggnick
 			,CAST(@recno+1 as nvarchar),@datea,@item
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@plus),1)),4,12))
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@minus),1)),4,12)),@memo)
 			set @recno = @recno + 1
 			set @curline = @curline + 1
+			set @n = @n + 1
 			
 			if(@curline%@rowline=0)
 			begin
 				set @page = @page + 1
 				insert into @tmp(page,n,gno,tggno,tgg,tggnick)
-				select @page,@curline%@rowline,'2',@tggno,@tgg,@tggnick
+				select @page,@n%@rowline,'2',@tggno,@tgg,@tggnick
 				set @curline = @curline + 1
+				set @n = @n + 1
 			end
 			fetch next from cursor_table2
 			into @datea,@item,@plus,@minus,@memo
@@ -341,23 +349,26 @@ z_tre_ds01:--z_tre_ds01
 			while(@curline%@rowline!=0)
 			begin
 				insert into @tmp(page,n,gno,tggno,tgg,tggnick)
-				values(@page,@curline%@rowline,'0',@tggno,@tgg,@tggnick)
+				values(@page,@n%@rowline,'0',@tggno,@tgg,@tggnick)
 				set @curline = @curline + 1
+				set @n = @n + 1
 			end
 			set @page = @page + 1
 		end
 		while(((@curline%@rowline)+@endline)%@rowline!=0)
 		begin
 			insert into @tmp(page,n,gno,tggno,tgg,tggnick)
-			values(@page,@curline%@rowline,'0',@tggno,@tgg,@tggnick)
+			values(@page,@n%@rowline,case when @curline%@rowline=0 then '3' else '0' end
+			,@tggno,@tgg,@tggnick)
 			set @curline = @curline + 1
+			set @n = @n + 1
 		end
 		select @mount=0,@money=0,@plus=0,@minus=0,@total=0
-		select @mount=SUM(cast(replace(g36,',','') as float)),@money=SUM(cast(replace(g38,',','') as float)) from @tmp where tggno=@tggno and gno='3'
-		select @plus=SUM(cast(replace(g44,',','') as float)),@minus=SUM(cast(replace(g45,',','') as float)) from @tmp where tggno=@tggno and gno='4'
+		select @mount=SUM(cast(replace(g36,',','') as float)),@money=SUM(cast(replace(g38,',','') as float)) from @tmp where tggno=@tggno and gno='4'
+		select @plus=SUM(cast(replace(g44,',','') as float)),@minus=SUM(cast(replace(g45,',','') as float)) from @tmp where tggno=@tggno and gno='5'
 		select @money=ISNULL(@money,0),@plus=ISNULL(@plus,0),@minus=ISNULL(@minus,0),@total=ISNULL(@money,0)+ISNULL(@plus,0)-ISNULL(@minus,0)
 		insert into @tmp(page,n,gno,tggno,tgg,tggnick,g51,g52,g53,g54,g55)
-			values(@page,@curline%@rowline,'5',@tggno,@tgg,@tggnick
+			values(@page,@n%@rowline,'6',@tggno,@tgg,@tggnick
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@mount)),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3) 
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@money),1)),4,12))
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@plus),1)),4,12))
