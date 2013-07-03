@@ -184,6 +184,8 @@ z_tre_ds01:--z_tre_ds01
 		page int,
 		n int,
 		gno nvarchar(10),
+		cpage int,
+		tpage int,
 
 		tggno nvarchar(20),
 		tgg nvarchar(50),
@@ -206,10 +208,11 @@ z_tre_ds01:--z_tre_ds01
 		g45 nvarchar(max),--minusmoney
 		g46 nvarchar(max),--memo
 		
-		g51 nvarchar(max), -- g38 sum
-		g52 nvarchar(max), -- g44 sum
-		g53 nvarchar(max), -- g45 sum
-		g54 nvarchar(max) -- g38 + g44 - g45
+		g51 nvarchar(max), -- g36 sum
+		g52 nvarchar(max), -- g38 sum
+		g53 nvarchar(max), -- g44 sum
+		g54 nvarchar(max), -- g45 sum
+		g55 nvarchar(max) -- g38 + g44 - g45
 	)
 	--------------------------------------------------------------------------------------------
 	declare @rowline int -- 每頁可用行數
@@ -220,7 +223,6 @@ z_tre_ds01:--z_tre_ds01
 	set @rowline = 15
 	set @endline = 5
 	set @page = 0
-	set @n = 0
 	
 	declare @datea nvarchar(10)
 	declare @trandate nvarchar(10)
@@ -234,6 +236,7 @@ z_tre_ds01:--z_tre_ds01
 	declare @item nvarchar(max)
 	declare @plus float
 	declare @minus float
+	declare @money float
 	
 	declare cursor_table cursor for
 	select isnull(a.tggno,'') a,isnull(b.comp,''),isnull(b.nick,'') from #z_tre_ds01 a 
@@ -250,9 +253,8 @@ z_tre_ds01:--z_tre_ds01
 		if exists(select * from #z_tre_ds01 where tggno=@tggno and pno='1')
 		begin
 			insert into @tmp(page,n,gno,tggno,tgg,tggnick)
-			select @page,@n,'1',@tggno,@tgg,@tggnick
+			select @page,@curline%@rowline,'1',@tggno,@tgg,@tggnick
 			set @curline = @curline + 1
-			set @n = @n + 1
 		end
 		declare cursor_table2 cursor for
 		select trandate,carno,addr,product,mount2,isnull(price2,0)+isnull(price3,0),total2,memo
@@ -265,23 +267,20 @@ z_tre_ds01:--z_tre_ds01
 		begin
 			insert into @tmp(page,n,gno,tggno,tgg,tggnick
 			,g31,g32,g33,g34,g35,g36,g37,g38,g39)
-			values(@page,@n,'3',@tggno,@tgg,@tggnick
+			values(@page,@curline%@rowline,'3',@tggno,@tgg,@tggnick
 			,CAST(@recno+1 as nvarchar),@trandate,@carno,@addr,@product
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@mount)),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3) 
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@price)),1)),4,12))+'.'+RIGHT(CAST(@price as nvarchar),3) 
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@total),1)),4,12)),@memo)
 			set @recno = @recno + 1
 			set @curline = @curline + 1
-			set @n = @n + 1
 			
 			if(@curline%@rowline=0)
 			begin	
 				set @page = @page + 1
-				set @n = 0	
 				insert into @tmp(page,n,gno,tggno,tgg,tggnick)
-				select @page,@n,'1',@tggno,@tgg,@tggnick
+				select @page,@curline%@rowline,'1',@tggno,@tgg,@tggnick
 				set @curline = @curline + 1
-				set @n = @n + 1
 			end
 			fetch next from cursor_table2
 			into @trandate,@carno,@addr,@product,@mount,@price,@total,@memo
@@ -294,17 +293,15 @@ z_tre_ds01:--z_tre_ds01
 			if(@curline%@rowline=@rowline-1)
 			begin
 				insert into @tmp(page,n,gno,tggno,tgg,tggnick)
-				values(@page,@n,'0',@tggno,@tgg,@tggnick)
+				values(@page,@curline%@rowline,'0',@tggno,@tgg,@tggnick)
 				set @recno = @recno + 1
 				set @curline = @curline + 1
 				set @page = @page + 1
-				set @n = 0
 			end
 		
 			insert into @tmp(page,n,gno,tggno,tgg,tggnick)
-			select @page,@n,'2',@tggno,@tgg,@tggnick
+			select @page,@curline%@rowline,'2',@tggno,@tgg,@tggnick
 			set @curline = @curline + 1
-			set @n = @n + 1
 			set @recno = 0
 		end
 		declare cursor_table2 cursor for
@@ -318,37 +315,57 @@ z_tre_ds01:--z_tre_ds01
 		begin
 			insert into @tmp(page,n,gno,tggno,tgg,tggnick
 			,g41,g42,g43,g44,g45,g46)
-			values(@page,@n,'4',@tggno,@tgg,@tggnick
+			values(@page,@curline%@rowline,'4',@tggno,@tgg,@tggnick
 			,CAST(@recno+1 as nvarchar),@datea,@item
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@plus),1)),4,12))
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@minus),1)),4,12)),@memo)
 			set @recno = @recno + 1
 			set @curline = @curline + 1
-			set @n = @n + 1
 			
 			if(@curline%@rowline=0)
 			begin
 				set @page = @page + 1
-				set @n = 0
 				insert into @tmp(page,n,gno,tggno,tgg,tggnick)
-				select @page,@n,'2',@tggno,@tgg,@tggnick
+				select @page,@curline%@rowline,'2',@tggno,@tgg,@tggnick
 				set @curline = @curline + 1
-				set @n = @n + 1
 			end
 			fetch next from cursor_table2
 			into @datea,@item,@plus,@minus,@memo
 		end
 		close cursor_table2
 		deallocate cursor_table2
-		
-		while(@curline%@rowline!=0)
+		---------------------------------------------------
+		--總計
+		if((@curline%@rowline)+@endline+1>@rowline)
+		begin
+			while(@curline%@rowline!=0)
+			begin
+				insert into @tmp(page,n,gno,tggno,tgg,tggnick)
+				values(@page,@curline%@rowline,'0',@tggno,@tgg,@tggnick)
+				set @curline = @curline + 1
+			end
+			set @page = @page + 1
+		end
+		while(((@curline%@rowline)+@endline)%@rowline!=0)
 		begin
 			insert into @tmp(page,n,gno,tggno,tgg,tggnick)
-			values(@page,@n,'0',@tggno,@tgg,@tggnick)
+			values(@page,@curline%@rowline,'0',@tggno,@tgg,@tggnick)
 			set @curline = @curline + 1
-			set @n = @n + 1
 		end
-		--------------------------------
+		select @mount=0,@money=0,@plus=0,@minus=0,@total=0
+		select @mount=SUM(cast(replace(g36,',','') as float)),@money=SUM(cast(replace(g38,',','') as float)) from @tmp where tggno=@tggno and gno='3'
+		select @plus=SUM(cast(replace(g44,',','') as float)),@minus=SUM(cast(replace(g45,',','') as float)) from @tmp where tggno=@tggno and gno='4'
+		select @money=ISNULL(@money,0),@plus=ISNULL(@plus,0),@minus=ISNULL(@minus,0),@total=ISNULL(@money,0)+ISNULL(@plus,0)-ISNULL(@minus,0)
+		insert into @tmp(page,n,gno,tggno,tgg,tggnick,g51,g52,g53,g54,g55)
+			values(@page,@curline%@rowline,'5',@tggno,@tgg,@tggnick
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@mount)),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3) 
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@money),1)),4,12))
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@plus),1)),4,12))
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@minus),1)),4,12))
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@total),1)),4,12)))
+	
+		update @tmp set cpage=page+1,tpage=@page where tggno=@tggno
+		---------------------------------------------------
 		fetch next from cursor_table
 		into @tggno,@tgg,@tggnick
 	end
