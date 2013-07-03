@@ -364,7 +364,7 @@ z_tre_ds01:--z_tre_ds01
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@minus),1)),4,12))
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@total),1)),4,12)))
 	
-		update @tmp set cpage=page+1,tpage=@page where tggno=@tggno
+		update @tmp set cpage=page+1,tpage=@page+1 where tggno=@tggno
 		---------------------------------------------------
 		fetch next from cursor_table
 		into @tggno,@tgg,@tggnick
