@@ -39,40 +39,45 @@ z_fixa_ds04:--z_fixa_ds04
 		carno nvarchar(20),
 		carplateno nvarchar(20),
 		position nvarchar(20),
+		namea nvarchar(20),
 		productno nvarchar(20),
 		product nvarchar(40),
 		brandno nvarchar(20),
 		brand nvarchar(40),
 		price float
 	)
-	insert into @tmp(recno,typea,ctype,tireno,datea,carno,carplateno,position,productno,product,brandno,brand,price)
+	insert into @tmp(recno,typea,ctype,tireno,datea,carno,carplateno,position,namea,productno,product,brandno,brand,price)
 	select ROW_NUMBER()over(PARTITION BY tireno order by tireno,datea,typea) recno,*
 	from(
-		select 1 typea,'進貨' ctype,a.tireno,b.indate datea,'' carno,'' carplateno,'' position 
+		select 1 typea,'進貨' ctype,a.tireno,b.indate datea,'' carno,'' carplateno,'' position,'' namea
 		,a.productno,a.product,a.brandno,a.brand,a.price
 		from fixins a
 		left join fixin b on a.noa = b.noa
 		where len(ISNULL(a.tireno,''))>0
 		union all
-		select 2 typea,'領料' ctype,a.tireno,b.outdate,b.carno,b.carplateno,a.position 
+		select 2 typea,'領料' ctype,a.tireno,b.outdate,b.carno,b.carplateno,a.position,e.namea 
 		,c.productno,c.product,c.brandno,c.brand,c.price
 		from fixouts a
 		left join fixout b on a.noa = b.noa
 		left join fixins c on a.tireno=c.tireno
+		left join car2 d on b.carno=d.carno
+		left join carkinds e on e.noa=d.carkindno and e.position=a.position
 		where len(ISNULL(a.tireno,''))>0
 		union all
-		select 3 typea,'換下' ctype,a.btireno,b.datea,'' carno,'' carplateno,'' position 
+		select 3 typea,'換下' ctype,a.btireno,b.datea,'' carno,'' carplateno,'' position,'' 
 		,c.productno,c.product,c.brandno,c.brand,c.price
 		from tires a
 		left join tire b on a.noa=b.noa
 		left join fixins c on a.btireno=c.tireno
 		where len(ISNULL(a.btireno,''))>0 and len(ISNULL(a.etireno,''))>0
 		union all
-		select 4 typea,'換上' ctype,a.etireno,b.datea,b.carno,b.carplateno,a.position 
+		select 4 typea,'換上' ctype,a.etireno,b.datea,b.carno,b.carplateno,a.position,e.namea 
 		,c.productno,c.product,c.brandno,c.brand,c.price
 		from tires a
 		left join tire b on a.noa=b.noa
 		left join fixins c on a.etireno=c.tireno
+		left join car2 d on b.carno=d.carno
+		left join carkinds e on e.noa=d.carkindno and e.position=a.position
 		where len(ISNULL(a.etireno,''))>0)a
 	where (len(@t_carno)=0 or @t_carno=a.carno)
 	and (len(@t_tireno)=0 or @t_tireno=a.tireno)
