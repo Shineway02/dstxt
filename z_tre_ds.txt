@@ -246,6 +246,8 @@ z_tre_ds02:--z_tre_ds02
 	declare @driverno nvarchar(20)
 	declare @driver nvarchar(20)
 	
+	declare @totcount int
+	
 	declare cursor_table cursor for
 	select isnull(a.driverno,'') a,isnull(b.namea,'') from #z_tre_ds02  a 
 	left join driver b on a.driverno=b.noa
@@ -259,14 +261,18 @@ z_tre_ds02:--z_tre_ds02
 		set @curline = 0
 		set @recno = 0
 		set @n = 0
-		--出車明細		
-		if exists(select * from #z_tre_ds02  where driverno=@driverno and pno='1')
+		--出車明細			
+		select @totcount = 0
+		select @totcount=count(1) from #z_tre_ds02  where driverno=@driverno and pno='1'
+		select @totcount = isnull(@totcount,0)
+		if @totcount>0
 		begin
 			insert into @tmp(page,n,gno,driverno,driver)
 			select @page,@n%@rowline,'1',@driverno,@driver
 			set @curline = @curline + 1
 			set @n = @n + 1
 		end
+		
 		declare cursor_table2 cursor for
 		select trandate,carno,addr,product,mount2,isnull(price2,0)+isnull(price3,0),total2,memo,discount
 		from #z_tre_ds02  
@@ -287,14 +293,17 @@ z_tre_ds02:--z_tre_ds02
 			set @recno = @recno + 1
 			set @curline = @curline + 1
 			set @n = @n + 1
-			
+			set @totcount = @totcount - 1
 			if(@curline%@rowline=0)
 			begin	
 				set @page = @page + 1
-				insert into @tmp(page,n,gno,driverno,driver)
-				select @page,@n%@rowline,'1',@driverno,@driver
-				set @curline = @curline + 1
-				set @n = @n + 1
+				if(@totcount>0)
+				begin
+					insert into @tmp(page,n,gno,driverno,driver)
+					select @page,@n%@rowline,'1',@driverno,@driver
+					set @curline = @curline + 1
+					set @n = @n + 1
+				end
 			end
 			fetch next from cursor_table2
 			into @trandate,@carno,@addr,@product,@mount,@price,@total,@memo,@discount
@@ -302,7 +311,10 @@ z_tre_ds02:--z_tre_ds02
 		close cursor_table2
 		deallocate cursor_table2
 		--加減項明細
-		if exists(select * from #z_tre_ds02  where driverno=@driverno and pno='2')
+		select @totcount = 0
+		select @totcount=count(1) from #z_tre_ds02  where driverno=@driverno and pno='2'
+		select @totcount = isnull(@totcount,0)
+		if @totcount>0
 		begin
 			if(@curline%@rowline=@rowline-1)
 			begin
@@ -338,14 +350,17 @@ z_tre_ds02:--z_tre_ds02
 			set @recno = @recno + 1
 			set @curline = @curline + 1
 			set @n = @n + 1
-			
-			if(@curline%@rowline=0)
+			set @totcount = @totcount - 1
+			if(@curline%@rowline=0 and @totcount>0)
 			begin
 				set @page = @page + 1
-				insert into @tmp(page,n,gno,driverno,driver)
-				select @page,@n%@rowline,'2',@driverno,@driver
-				set @curline = @curline + 1
-				set @n = @n + 1
+				if(@totcount>0)
+				begin
+					insert into @tmp(page,n,gno,driverno,driver)
+					select @page,@n%@rowline,'2',@driverno,@driver
+					set @curline = @curline + 1
+					set @n = @n + 1
+				end
 			end
 			fetch next from cursor_table2
 			into @datea,@item,@plus,@minus,@memo
@@ -644,6 +659,8 @@ z_tre_ds01:--z_tre_ds01
 	declare @money float
 	declare @discount decimal(12,3)
 	
+	declare @totcount int
+	
 	declare cursor_table cursor for
 	select isnull(a.tggno,'') a,isnull(b.comp,''),isnull(b.nick,'') from #z_tre_ds01 a 
 	left join tgg b on a.tggno=b.noa
@@ -658,7 +675,10 @@ z_tre_ds01:--z_tre_ds01
 		set @recno = 0
 		set @n = 0
 		--出車明細		
-		if exists(select * from #z_tre_ds01 where tggno=@tggno and pno='1')
+		select @totcount = 0
+		select @totcount=count(1) from #z_tre_ds01 where tggno=@tggno and pno='1'
+		select @totcount = isnull(@totcount,0)
+		if @totcount>0
 		begin
 			insert into @tmp(page,n,gno,tggno,tgg,tggnick)
 			select @page,@n%@rowline,'1',@tggno,@tgg,@tggnick
@@ -685,14 +705,17 @@ z_tre_ds01:--z_tre_ds01
 			set @recno = @recno + 1
 			set @curline = @curline + 1
 			set @n = @n + 1
-			
+			set @totcount = @totcount - 1
 			if(@curline%@rowline=0)
 			begin	
 				set @page = @page + 1
-				insert into @tmp(page,n,gno,tggno,tgg,tggnick)
-				select @page,@n%@rowline,'1',@tggno,@tgg,@tggnick
-				set @curline = @curline + 1
-				set @n = @n + 1
+				if(@totcount>0)
+				begin
+					insert into @tmp(page,n,gno,tggno,tgg,tggnick)
+					select @page,@n%@rowline,'1',@tggno,@tgg,@tggnick
+					set @curline = @curline + 1
+					set @n = @n + 1
+				end
 			end
 			fetch next from cursor_table2
 			into @trandate,@carno,@addr,@product,@mount,@price,@total,@memo,@discount
@@ -700,7 +723,10 @@ z_tre_ds01:--z_tre_ds01
 		close cursor_table2
 		deallocate cursor_table2
 		--加減項明細
-		if exists(select * from #z_tre_ds01 where tggno=@tggno and pno='2')
+		select @totcount = 0
+		select @totcount=count(1) from #z_tre_ds01 where tggno=@tggno and pno='2'
+		select @totcount = isnull(@totcount,0)
+		if @totcount>0
 		begin
 			if(@curline%@rowline=@rowline-1)
 			begin
@@ -736,14 +762,17 @@ z_tre_ds01:--z_tre_ds01
 			set @recno = @recno + 1
 			set @curline = @curline + 1
 			set @n = @n + 1
-			
+			set @totcount = @totcount - 1
 			if(@curline%@rowline=0)
 			begin
 				set @page = @page + 1
-				insert into @tmp(page,n,gno,tggno,tgg,tggnick)
-				select @page,@n%@rowline,'2',@tggno,@tgg,@tggnick
-				set @curline = @curline + 1
-				set @n = @n + 1
+				if(@totcount>0)
+				begin
+					insert into @tmp(page,n,gno,tggno,tgg,tggnick)
+					select @page,@n%@rowline,'2',@tggno,@tgg,@tggnick
+					set @curline = @curline + 1
+					set @n = @n + 1
+				end
 			end
 			fetch next from cursor_table2
 			into @datea,@item,@plus,@minus,@memo
