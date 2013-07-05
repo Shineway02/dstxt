@@ -203,6 +203,7 @@ z_tre_ds02:--z_tre_ds02
 		g37 nvarchar(max),--price
 		g38 nvarchar(max),--total
 		g39 nvarchar(max),--memo
+		g3a nvarchar(max),--discount
 		
 		g41 nvarchar(max),--recno
 		g42 nvarchar(max),--date
@@ -240,6 +241,7 @@ z_tre_ds02:--z_tre_ds02
 	declare @plus float
 	declare @minus float
 	declare @money float
+	declare @discount decimal(12,3)
 	
 	declare @driverno nvarchar(20)
 	declare @driver nvarchar(20)
@@ -266,21 +268,22 @@ z_tre_ds02:--z_tre_ds02
 			set @n = @n + 1
 		end
 		declare cursor_table2 cursor for
-		select trandate,carno,addr,product,mount2,isnull(price2,0)+isnull(price3,0),total2,memo
+		select trandate,carno,addr,product,mount2,isnull(price2,0)+isnull(price3,0),total2,memo,discount
 		from #z_tre_ds02  
 		where driverno=@driverno and pno='1' order by trandate,addrno,carno
 		open cursor_table2
 		fetch next from cursor_table2
-		into @trandate,@carno,@addr,@product,@mount,@price,@total,@memo
+		into @trandate,@carno,@addr,@product,@mount,@price,@total,@memo,@discount
 		while(@@FETCH_STATUS <> -1)
 		begin
 			insert into @tmp(page,n,gno,driverno,driver
-			,g31,g32,g33,g34,g35,g36,g37,g38,g39)
+			,g31,g32,g33,g34,g35,g36,g37,g38,g39,g3a)
 			values(@page,@n%@rowline,'4',@driverno,@driver
 			,CAST(@recno+1 as nvarchar),@trandate,@carno,@addr,@product
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@mount)),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3) 
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@price)),1)),4,12))+'.'+RIGHT(CAST(@price as nvarchar),3) 
-			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@total),1)),4,12)),@memo)
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@total),1)),4,12)),@memo
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@discount)),1)),4,12))+'.'+RIGHT(CAST(@discount as nvarchar),3))
 			set @recno = @recno + 1
 			set @curline = @curline + 1
 			set @n = @n + 1
@@ -294,7 +297,7 @@ z_tre_ds02:--z_tre_ds02
 				set @n = @n + 1
 			end
 			fetch next from cursor_table2
-			into @trandate,@carno,@addr,@product,@mount,@price,@total,@memo
+			into @trandate,@carno,@addr,@product,@mount,@price,@total,@memo,@discount
 		end
 		close cursor_table2
 		deallocate cursor_table2
@@ -601,6 +604,7 @@ z_tre_ds01:--z_tre_ds01
 		g37 nvarchar(max),--price
 		g38 nvarchar(max),--total
 		g39 nvarchar(max),--memo
+		g3a nvarchar(max),--discount
 		
 		g41 nvarchar(max),--recno
 		g42 nvarchar(max),--date
@@ -638,6 +642,7 @@ z_tre_ds01:--z_tre_ds01
 	declare @plus float
 	declare @minus float
 	declare @money float
+	declare @discount decimal(12,3)
 	
 	declare cursor_table cursor for
 	select isnull(a.tggno,'') a,isnull(b.comp,''),isnull(b.nick,'') from #z_tre_ds01 a 
@@ -661,21 +666,22 @@ z_tre_ds01:--z_tre_ds01
 			set @n = @n + 1
 		end
 		declare cursor_table2 cursor for
-		select trandate,carno,addr,product,mount2,isnull(price2,0)+isnull(price3,0),total2,memo
+		select trandate,carno,addr,product,mount2,isnull(price2,0)+isnull(price3,0),total2,memo,discount
 		from #z_tre_ds01 
 		where tggno=@tggno and pno='1' order by trandate,addrno,carno
 		open cursor_table2
 		fetch next from cursor_table2
-		into @trandate,@carno,@addr,@product,@mount,@price,@total,@memo
+		into @trandate,@carno,@addr,@product,@mount,@price,@total,@memo,@discount
 		while(@@FETCH_STATUS <> -1)
 		begin
 			insert into @tmp(page,n,gno,tggno,tgg,tggnick
-			,g31,g32,g33,g34,g35,g36,g37,g38,g39)
+			,g31,g32,g33,g34,g35,g36,g37,g38,g39,g3a)
 			values(@page,@n%@rowline,'4',@tggno,@tgg,@tggnick
 			,CAST(@recno+1 as nvarchar),@trandate,@carno,@addr,@product
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@mount)),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3) 
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@price)),1)),4,12))+'.'+RIGHT(CAST(@price as nvarchar),3) 
-			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@total),1)),4,12)),@memo)
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@total),1)),4,12)),@memo
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@discount)),1)),4,12))+'.'+RIGHT(CAST(@discount as nvarchar),3) )
 			set @recno = @recno + 1
 			set @curline = @curline + 1
 			set @n = @n + 1
@@ -689,7 +695,7 @@ z_tre_ds01:--z_tre_ds01
 				set @n = @n + 1
 			end
 			fetch next from cursor_table2
-			into @trandate,@carno,@addr,@product,@mount,@price,@total,@memo
+			into @trandate,@carno,@addr,@product,@mount,@price,@total,@memo,@discount
 		end
 		close cursor_table2
 		deallocate cursor_table2
