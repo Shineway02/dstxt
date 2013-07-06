@@ -1,0 +1,290 @@
+z_fixa_ds04:--z_fixa_ds04
+	SET QUOTED_IDENTIFIER OFF
+	declare @cmd nvarchar(max)
+	declare @t_accy nvarchar(10)
+	declare @t_name nvarchar(20)
+	declare @t_bdate nvarchar(10)
+	declare @t_edate nvarchar(10)
+	declare @t_btggno nvarchar(20)
+	declare @t_etggno nvarchar(20)
+	declare @t_carno nvarchar(20)
+	declare @limit float
+	declare @detail01 nvarchar(max)
+	declare @t_tireno nvarchar(max)
+	
+	set @t_accy = '[1]'
+	set @t_name = '[2]'
+	set @t_bdate = case when '#non'=[3] then '' else [3] end
+	set @t_edate = case when '#non'=[4] then CHAR(255) else [4] end
+	set @t_btggno = case when '#non'=[5] then '' else [5] end
+	set @t_etggno = case when '#non'=[6] then CHAR(255) else [6] end
+	set @t_carno = case when '#non'=[7] then '' else [7] end
+	BEGIN TRY
+		set @limit = CAST(case when '#non'=[8] then '0' else [8] end AS FLOAT)
+	END TRY
+	BEGIN CATCH
+		set @limit = 0
+	END CATCH
+	set @detail01 = case when '#non'=[9] then '' else [9] end
+	set @t_tireno = case when '#non'=[10] then '' else [10] end
+	------------------------------------------------------------------------
+	declare @tmp table(
+		gno nvarchar(10),
+		rr int,
+		recno int,
+		typea int,
+		ctype nvarchar(10),
+		tireno nvarchar(20),
+		datea nvarchar(10),
+		carno nvarchar(20),
+		carplateno nvarchar(20),
+		position nvarchar(20),
+		namea nvarchar(20),
+		productno nvarchar(20),
+		product nvarchar(40),
+		brandno nvarchar(20),
+		brand nvarchar(40),
+		price float
+	)
+	insert into @tmp(recno,typea,ctype,tireno,datea,carno,carplateno,position,namea,productno,product,brandno,brand,price)
+	select ROW_NUMBER()over(PARTITION BY tireno order by tireno,datea,typea) recno,*
+	from(
+		select 1 typea,'進貨' ctype,a.tireno,b.indate datea,'' carno,'' carplateno,'' position,'' namea
+		,a.productno,a.product,a.brandno,a.brand,a.price
+		from fixins a
+		left join fixin b on a.noa = b.noa
+		where len(ISNULL(a.tireno,''))>0
+		union all
+		select 2 typea,'領料' ctype,a.tireno,b.outdate,b.carno,b.carplateno,a.position,e.namea 
+		,c.productno,c.product,c.brandno,c.brand,c.price
+		from fixouts a
+		left join fixout b on a.noa = b.noa
+		left join fixins c on a.tireno=c.tireno
+		left join car2 d on b.carno=d.carno
+		left join carkinds e on e.noa=d.carkindno and e.position=a.position
+		where len(ISNULL(a.tireno,''))>0
+		union all
+		select 3 typea,'換下' ctype,a.btireno,b.datea,'' carno,'' carplateno,'' position,'' 
+		,c.productno,c.product,c.brandno,c.brand,c.price
+		from tires a
+		left join tire b on a.noa=b.noa
+		left join fixins c on a.btireno=c.tireno
+		where len(ISNULL(a.btireno,''))>0 and len(ISNULL(a.etireno,''))>0
+		union all
+		select 4 typea,'換上' ctype,a.etireno,b.datea,b.carno,b.carplateno,a.position,e.namea 
+		,c.productno,c.product,c.brandno,c.brand,c.price
+		from tires a
+		left join tire b on a.noa=b.noa
+		left join fixins c on a.etireno=c.tireno
+		left join car2 d on b.carno=d.carno
+		left join carkinds e on e.noa=d.carkindno and e.position=a.position
+		where len(ISNULL(a.etireno,''))>0)a
+	where (len(@t_carno)=0 or @t_carno=a.carno)
+	and (len(@t_tireno)=0 or @t_tireno=a.tireno)
+	order by a.tireno,a.datea,a.typea
+	
+	update @tmp set gno='1' where recno=1
+	update @tmp set gno='2' where recno!=1
+	-------------------------------------------------------------------
+	declare @recno int
+	declare @tireno nvarchar(20)
+	declare @n int
+	
+	set @n = 1
+	declare cursor_table cursor for
+	select recno,tireno from @tmp where recno=1 order by tireno 
+	open cursor_table
+	fetch next from cursor_table
+	into @recno,@tireno
+	while(@@FETCH_STATUS <> -1)
+	begin
+		update @tmp set rr=@n where tireno=@tireno and recno=@recno
+		set @n = @n + 1
+		fetch next from cursor_table
+		into @recno,@tireno
+	end
+	close cursor_table
+	deallocate cursor_table
+	
+	select * 
+	,position pos
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,price),1)),4,12)) pe 
+	from @tmp order by tireno;
+
+z_fixa_ds03:--z_fixa_ds03
+	SET QUOTED_IDENTIFIER OFF
+	declare @cmd nvarchar(max)
+	declare @t_accy nvarchar(10)
+	declare @t_name nvarchar(20)
+	
+	select '0' gno
+	,ROW_NUMBER()over(order by brand,noa) rr
+	,* 
+	,productno po
+	,product pt
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,price),1)),4,12)) pe
+	from view_tirestk order by brand,noa;
+
+z_fixa_ds01:--z_fixa_ds01
+	SET QUOTED_IDENTIFIER OFF
+	declare @cmd nvarchar(max)
+	declare @t_accy nvarchar(10)
+	declare @t_name nvarchar(20)
+	declare @t_bdate nvarchar(10)
+	declare @t_edate nvarchar(10)
+	declare @t_btggno nvarchar(20)
+	declare @t_etggno nvarchar(20)
+	declare @t_carno nvarchar(20)
+	declare @limit float
+	declare @detail01 nvarchar(max)
+	
+	set @t_accy = '[1]'
+	set @t_name = '[2]'
+	set @t_bdate = case when '#non'=[3] then '' else [3] end
+	set @t_edate = case when '#non'=[4] then CHAR(255) else [4] end
+	set @t_btggno = case when '#non'=[5] then '' else [5] end
+	set @t_etggno = case when '#non'=[6] then CHAR(255) else [6] end
+	set @t_carno = case when '#non'=[7] then '' else [7] end
+	BEGIN TRY
+		set @limit = CAST(case when '#non'=[8] then '0' else [8] end AS FLOAT)
+	END TRY
+	BEGIN CATCH
+		set @limit = 0
+	END CATCH
+	set @detail01 = case when '#non'=[9] then '' else [9] end
+	------------------------------------------------------------------------
+	declare @tmp table(
+		gno nvarchar(10),
+		pno nvarchar(10),
+		
+		tablea nvarchar(20),
+		noa nvarchar(20),
+		datea nvarchar(10),
+		tggno nvarchar(20),
+		tgg	nvarchar(50),
+		carno nvarchar(20),
+		wmoney float,
+		cmoney float,
+		dmoney float,
+		tax float,
+		discount float,
+		total float,
+		
+		tireno nvarchar(20),
+		productno nvarchar(20),
+		product nvarchar(50),
+		mount decimal(15,3),
+		price decimal(15,3),
+		[money] float,
+		
+		position nvarchar(10),
+		btireno nvarchar(40),
+		[action] nvarchar(10),
+		etireno nvarchar(40),
+		memos nvarchar(max)
+	)
+	
+	insert into @tmp(gno,pno,tablea,noa,datea,tggno,tgg,carno,wmoney,cmoney,dmoney,tax,discount,total)
+	select '1','1','fixa',a.noa,a.fixadate,a.tggno,a.tgg,a.carno,a.wmoney,a.cmoney,a.dmoney,a.tax,a.discount,a.total
+	from fixa a 
+	where charindex('fixa',@detail01)>0
+		and a.fixadate between @t_bdate and @t_edate
+		and (a.tggno between @t_btggno and @t_etggno)
+		and (len(@t_carno)=0 or a.carno=@t_carno)
+	union all
+	select '1','2','fixin',a.noa,a.indate,a.tggno,a.tgg,'' carno,a.wmoney,a.cmoney,a.dmoney,a.tax,a.discount,a.total
+	from fixin a 
+	where charindex('fixin',@detail01)>0
+		and a.indate between @t_bdate and @t_edate
+		and (a.tggno between @t_btggno and @t_etggno)
+	union all
+	select '1','3','fixout',a.noa,a.outdate,'' tggno,'' tgg,a.carno,a.wmoney,a.cmoney,a.dmoney,0,0,a.[money]
+	from fixout a 
+	where charindex('fixout',@detail01)>0
+		and a.outdate between @t_bdate and @t_edate
+		and (len(@t_carno)=0 or a.carno=@t_carno)
+	union all
+	select '1','3','tire',a.noa,a.datea,a.tggno,a.tgg,a.carno,a.wmoney,a.cmoney,a.dmoney,0,0,ISNULL(a.wmoney,0)+ISNULL(a.cmoney,0)+ISNULL(a.dmoney,0)
+	from tire a 
+	where charindex('tire',@detail01)>0
+		and a.datea between @t_bdate and @t_edate
+		and (a.tggno between @t_btggno and @t_etggno)
+		and (len(@t_carno)=0 or a.carno=@t_carno)
+
+	-------------------------------------------------------------------------------------------
+	if(charindex('detail',@detail01)>0)
+	begin
+		insert into @tmp(gno,pno,tablea,noa,productno,product,mount,price,[money])
+				select '2','1','fixa',a.noa,a.productno,a.product,a.mount,a.price,a.[money] 
+				from fixas a 
+				left join @tmp b on b.tablea='fixa' and a.noa=b.noa
+				where (b.noa is not null) and ISNULL(a.[money],0)>=@limit	
+		insert into @tmp(gno,pno,tablea,noa,productno,product,mount,price,[money])
+				select '2','2','fixin',a.noa,a.productno,a.product,a.mount,a.price,a.[money] 
+				from fixins a 
+				left join @tmp b on b.tablea='fixin' and a.noa=b.noa
+				where (b.noa is not null) and ISNULL(a.[money],0)>=@limit	
+		insert into @tmp(gno,pno,tablea,noa,productno,product,mount,price,[money])
+				select '2','3','fixout',a.noa,a.productno,a.product,a.mount,a.price,a.[money] 
+				from fixouts a 
+				left join @tmp b on b.tablea='fixout' and a.noa=b.noa
+				where (b.noa is not null) and ISNULL(a.[money],0)>=@limit	
+		insert into @tmp(gno,pno,tablea,noa,position,btireno,[action],etireno,price,memos)
+				select '5','4','tire',a.noa,a.position,a.btireno,a.[action],a.etireno,a.price,a.memo 
+				from tires a 
+				left join @tmp b on b.tablea='tire' and a.noa=b.noa
+				where (b.noa is not null) and ISNULL(a.price,0)>=@limit
+				and len(a.etireno)>0
+	end
+	--fixa
+	if(charindex('fixa',@detail01)>0)
+	begin
+		insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,tax,discount,total)
+		select '3','5','維修',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0))
+		,SUM(ISNULL(tax,0)),SUM(ISNULL(discount,0)),SUM(ISNULL(total,0))
+		from @tmp where gno='1' and tablea='fixa'
+	end
+	--fixin
+	if(charindex('fixin',@detail01)>0)
+	begin
+		insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,tax,discount,total)
+		select '3','6','進貨',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0))
+		,SUM(ISNULL(tax,0)),SUM(ISNULL(discount,0)),SUM(ISNULL(total,0))
+		from @tmp where gno='1' and tablea='fixin'
+	end
+	--fixout
+	if(charindex('fixout',@detail01)>0)
+	begin
+		insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,tax,discount,total)
+		select '3','7','領料',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0))
+		,SUM(ISNULL(tax,0)),SUM(ISNULL(discount,0)),SUM(ISNULL(total,0))
+		from @tmp where gno='1' and tablea='fixout'
+	end
+	--tire
+	if(charindex('tire',@detail01)>0)
+	begin
+		insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,tax,discount,total)
+		select '3','8','換補',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0))
+		,SUM(ISNULL(tax,0)),SUM(ISNULL(discount,0)),SUM(ISNULL(total,0))
+		from @tmp where gno='1' and tablea='tire'
+	end
+	--total
+	insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,tax,discount,total)
+	select '4','9','總計',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0))
+	,SUM(ISNULL(tax,0)),SUM(ISNULL(discount,0)),SUM(ISNULL(total,0))
+	from @tmp where gno='1'
+	
+	select a.* 
+	,b.nick nick
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,wmoney),1)),4,12)) wm
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,dmoney),1)),4,12)) dm
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,cmoney),1)),4,12)) cm
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,tax),1)),4,12)) tt
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,discount),1)),4,12)) dis
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total),1)),4,12)) tot
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(mount)),1)),4,12))+'.'+RIGHT(CAST(mount as nvarchar),3) mt
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price)),1)),4,12))+'.'+RIGHT(CAST(price as nvarchar),3) pe
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,[money]),1)),4,12)) my
+	from @tmp a
+	left join tgg b on a.tggno=b.noa
+	order by a.pno,a.tablea,a.noa,a.gno;
