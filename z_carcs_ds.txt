@@ -1,0 +1,164 @@
+	----------------------------------------------------------------------------------------
+	z_carcsa_ds01:--z_carcsa_ds01
+	SET QUOTED_IDENTIFIER OFF 
+	declare @cmd nvarchar(max) 
+	declare @t_bxdate nvarchar(20)
+	declare @t_exdate nvarchar(20)
+	declare @t_bxtrandate nvarchar(20)
+	declare @t_extrandate nvarchar(20)
+	declare @t_xinterval nvarchar(20) 
+	declare @t_bcustno nvarchar(20) 
+	declare @t_ecustno nvarchar(20) 
+	set @t_bxdate = case when '#non'=[2] then '' else [2] end
+	set @t_exdate = case when '#non'=[3] then CHAR(255) else [3] end
+	set @t_bxtrandate = case when '#non'=[4] then '' else [4] end
+	set @t_extrandate = case when '#non'=[5] then CHAR(255) else [5] end
+	set @t_bcustno = case when '#non'=[6] then '' else [6] end 
+	set @t_ecustno = case when '#non'=[7] then CHAR(255) else [7] end
+	set @t_xinterval = case when '#non'=[8] then '' when '全部'=[8] then '' else [8] end 
+	declare @tmp table( 
+		gno nvarchar(1), 
+		n nvarchar(3),
+		cno nvarchar(20), 
+		acomp nvarchar(50), 
+		custno nvarchar(20), 
+		comp nvarchar(50), 
+		serial nvarchar(20), 
+		datea nvarchar(10), 
+		trandate nvarchar(20),
+		mon nvarchar(10), 
+		ordeno nvarchar(20), 
+		cartype nvarchar(20), 
+		btime nvarchar(10), 
+		onti nvarchar(20), 
+		etime nvarchar(20), 
+		typea nvarchar(20), 
+		times nvarchar(20), 
+		inplus float, 
+		inmoney float,
+		outmoney float, 
+		carno nvarchar(50) 
+	) 
+	set @cmd = "select '0' gno,'0.1',isnull(a.cno,''),'',a.custno,a.comp,b.serial,a.datea,a.trandate,a.mon,a.ordeno,a.cartype,a.btime,a.ontime,a.etime,a.typea, 
+			a.times,a.inplus,a.inmoney,a.outmoney,case when charindex(',',a.carno) >0 then substring(a.carno,0,charindex(',',a.carno)) else a.carno end 
+	from carcsa a 
+	left join cust b on a.custno = b.noa 
+	where (a.datea between @t_bxdate and @t_exdate) and 
+	(a.trandate between @t_bxtrandate and @t_extrandate) and 
+	(LEN(@t_xinterval) = 0 or @t_xinterval = a.interval) and 
+	(a.custno between @t_bcustno and @t_ecustno) " 
+
+	insert into @tmp 
+	execute sp_executesql @cmd,N'@t_bxdate nvarchar(20),@t_exdate nvarchar(20),@t_bxtrandate nvarchar(20),@t_extrandate nvarchar(20),@t_xinterval nvarchar(20),@t_bcustno nvarchar(20),@t_ecustno nvarchar(20)' 
+	,@t_bxdate=@t_bxdate,@t_exdate=@t_exdate,@t_bxtrandate=@t_bxtrandate,@t_extrandate=@t_extrandate,@t_xinterval=@t_xinterval,@t_bcustno = @t_bcustno,@t_ecustno = @t_ecustno 
+
+	insert into @tmp 
+	select '1' gno,'0.3','','',custno,MAX(comp),'','','',mon,'','','','','','',0,0,0,0,'' 
+	from @tmp 
+	group by custno,mon 
+
+	insert into @tmp 
+	select '2' gno,'0.2','','',custno,MAX(comp),'','','',max(mon),'','','','','','',0,SUM(inplus),SUM(inmoney),SUM(outmoney),'' 
+	from @tmp 
+	group by custno
+	 
+	select gno,n,cno,acomp,custno,comp,serial,datea,trandate,mon,ordeno,cartype,btime,onti,etime,typea,times, 
+	reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,inplus),1)),4,12)) inplus, 
+	reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,inmoney),1)),4,12)) inmoney, 
+	reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,outmoney),1)),4,12)) outmoney, 
+	carno 
+	from @tmp 
+	order by custno,mon,n;
+-------------------------------------------------------------------------------------------------
+z_carcsb_ds01:--z_carcsb_ds01
+	declare @t_bxdate nvarchar(20) 
+	declare @t_exdate nvarchar(20) 
+	declare @t_bxtrandate nvarchar(20) 
+	declare @t_extrandate nvarchar(20) 
+	declare @t_bcustno nvarchar(20) 
+	declare @t_ecustno nvarchar(20) 
+	set @t_bxdate = case when '#non' = [2] then '' else [2] end 
+	set @t_exdate = case when '#non' = [3] then CHAR(255) else [3] end 
+	set @t_bxtrandate = case when '#non' = [4] then '' else [4] end 
+	set @t_extrandate = case when '#non' = [5] then CHAR(255) else [5] end 
+	set @t_bcustno = case when '#non' = [6] then '' else [6] end 
+	set @t_ecustno = case when '#non' = [7] then CHAR(255) else [7] end 
+	declare @tmp table( 
+		gno nvarchar(1), 
+		datea nvarchar(20),
+		trandate nvarchar(20),
+		serial nvarchar(20), 
+		custno nvarchar(20), 
+		comp nvarchar(50), 
+		tranno nvarchar(20), 
+		inmount float, 
+		inmoney float
+	) 
+	insert into @tmp
+	select '0' gno,a.datea,a.trandate,b.serial,a.custno,a.comp,a.carno,a.inmount*1000,a.inmoney
+	from carcsb a 
+	left join cust b on a.custno = b.noa 
+	where (a.datea between @t_bxdate and @t_exdate) and 
+	(a.custno between @t_bcustno and @t_ecustno)
+
+	insert into @tmp 
+	select '1' gno,'','','',custno,'',COUNT(tranno),SUM(inmount),SUM(inmoney)
+	from @tmp 
+	group by custno 
+
+	insert into @tmp 
+	select '2' gno,'','','',CHAR(255),'',COUNT(tranno),SUM(inmount),SUM(inmoney)
+	from @tmp 
+	where gno != '1'
+
+	select gno,datea,trandate,serial,custno,comp,tranno,
+	reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,inmount),1)),4,12)) inmount, 
+	reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,inmoney),1)),4,12)) inmoney 
+	from @tmp 
+	order by custno,gno;
+--------------------------------------------------------------------------------------------------
+z_carcsc_ds01:--z_carcsc_ds01  
+	declare @t_bxdate nvarchar(20) 
+	declare @t_exdate nvarchar(20) 
+	declare @t_bxtrandate nvarchar(20) 
+	declare @t_extrandate nvarchar(20) 
+	set @t_bxdate = case when '#non' = [2] then '' else [2] end 
+	set @t_exdate = case when '#non' = [3] then CHAR(255) else [3] end 
+	set @t_bxtrandate = case when '#non' = [4] then '' else [4] end 
+	set @t_extrandate = case when '#non' = [5] then CHAR(255) else [5] end 
+	declare @tmp table( 
+			gno nvarchar(1),
+			noa nvarchar(20), 
+			datea nvarchar(20),
+			trandate nvarchar(20),
+			serial nvarchar(20), 
+			custno nvarchar(20), 
+			comp nvarchar(50), 
+			boatno nvarchar(20), 
+			boatname nvarchar(10), 
+			tranno nvarchar(30), 
+			addr nvarchar(50), 
+			inmount float, 
+			inprice float, 
+			inmoney float 
+	) 
+	insert into @tmp
+	select '0' gno,a.noa,a.datea,a.trandate,a.custno,b.serial,a.comp,a.boatno,a.boat,a.tranno,a.addr,a.inmount*1000,a.inprice,a.inmoney 
+	from carcsc a 
+	left join cust b on a.custno = b.noa 
+	where a.datea between @t_bxdate and @t_exdate
+	and a.trandate between @t_bxtrandate and @t_extrandate
+	
+	insert into @tmp 
+	select '1' gno,'','','','',custno,'','','','','',SUM(inmount),0,SUM(inmoney) 
+	from @tmp 
+	group by custno 
+
+	select gno,noa,datea,trandate,serial,custno,comp,boatno,boatname,tranno,addr,trandate, 
+	reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,inmount),1)),4,12)) inmount, 
+	reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,inprice),1)),4,12)) inprice, 
+	reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,inmoney),1)),4,12)) inmoney 
+	from @tmp 
+	order by custno,gno;
+--------------------------------------------------------------------------------------------------
+
