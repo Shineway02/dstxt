@@ -126,4 +126,4 @@ zxls_csc:--zxls_csc
 	left join addr d on a.straddrno=d.noa
 	left join cust e on a.custno=e.noa
 	left join ucc f on a.uccno=f.noa
-	left join tgg g on len(a.memo)>0 and g.nick=a.memo;
+	outer apply (select top(1) a.noa,a.comp from tgg a where len(a.memo)>0 and a.nick=a.memo) g  ;
