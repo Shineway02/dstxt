@@ -143,7 +143,7 @@ zxls_csa:--zxls_csa
 	left join cust b on a.custno=b.noa
 	left join addr c on a.addrno=c.noa
 	left join ucc d on a.uccno=d.noa
-	left join tgg e on len(a.memo)>0 and e.nick=a.memo
+	outer apply (select top(1) a.noa,a.comp from tgg a where len(a.memo)>0 and a.nick=a.memo) e 
 	
 	insert into carcsas(noa,noq,carno,driverno,driver,calctype,[weight],mount,discount,outprice,outmoney,inmoney)
 	select a.noa,a.noq,a.carno,b.driverno,c.namea,a.calctype,a.[weight],a.mount,a.discount,a.price,a.[money],ROUND(ISNULL(a.mount,0)*ISNULL(d.price,0),0)
