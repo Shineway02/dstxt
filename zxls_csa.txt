@@ -57,27 +57,32 @@ zxls_csa:--zxls_csa
 	declare @qno int
 	select @count=1, @pno = 0
 	declare cursor_table cursor for
-	select a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r from ztmpxls order by cast(s as int)
+	select a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r from ztmpxls order by cast(noa as int)
 	open cursor_table
 	fetch next from cursor_table
 	into @a,@b,@c,@d,@e,@f,@g,@h,@i,@j,@k,@l,@m,@n,@o,@p,@q,@r
 	while(@@FETCH_STATUS <> -1)
 	begin
-		if(LEN(@a)>0)
-		begin
-			select @pno = @pno + 1,@qno = 1
-			insert into @tmp(pno,datea,trandate,mon,interval,ordeno,cartype,price,custno,addrno,uccno,memo)
-			values(@pno,@a,@b,@c,@d,@e,@f,cast(@g as float),@h,@i,@j,@k)
-			insert into @tmps(pno,qno,carno,calctype,[weight],mount,price,discount,[money])
-			values(@pno,@qno,@l,@m,cast(@n as float),cast(@o as float),cast(@p as float),cast(@q as float),cast(@r as float))
-		end
-		else
-		begin
-			select @qno = @qno + 1
-			insert into @tmps(pno,qno,carno,calctype,[weight],mount,price,discount,[money])
-			values(@pno,@qno,@l,@m,cast(@n as float),cast(@o as float),cast(@p as float),cast(@q as float),cast(@r as float))
-		end
-		set @count = @count + 1
+		begin try
+			if(LEN(@a)>0)
+			begin
+				select @pno = @pno + 1,@qno = 1
+				insert into @tmp(pno,datea,trandate,mon,interval,ordeno,cartype,price,custno,addrno,uccno,memo)
+				values(@pno,@a,@b,@c,@d,@e,@f,cast(@g as float),@h,@i,@j,@k)
+				insert into @tmps(pno,qno,carno,calctype,[weight],mount,price,discount,[money])
+				values(@pno,@qno,@l,@m,cast(@n as float),cast(@o as float),cast(@p as float),cast(@q as float),cast(@r as float))	
+			end
+			else
+			begin
+				select @qno = @qno + 1
+				insert into @tmps(pno,qno,carno,calctype,[weight],mount,price,discount,[money])
+				values(@pno,@qno,@l,@m,cast(@n as float),cast(@o as float),cast(@p as float),cast(@q as float),cast(@r as float))
+			end
+			set @count = @count + 1
+		end try
+		begin catch
+		
+		end catch
 		fetch next from cursor_table
 		into @a,@b,@c,@d,@e,@f,@g,@h,@i,@j,@k,@l,@m,@n,@o,@p,@q,@r
 	end
