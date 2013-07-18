@@ -17,6 +17,8 @@ zxls_csa:--zxls_csa
 	declare @p nvarchar(max)
 	declare @q nvarchar(max)
 	declare @r nvarchar(max)
+	declare @s nvarchar(max)
+	declare @t nvarchar(max)
 	------------------------------------------------------------------
 	declare @tmp table(
 		pno int,
@@ -35,7 +37,11 @@ zxls_csa:--zxls_csa
 		[weight] float,
 		mount float,
 		inmoney float,
-		outmoney float
+		outmoney float,
+		tggno nvarchar(20),
+		tgg nvarchar(50),
+		cardealno nvarchar(20),
+		cardeal nvarchar(50)
 	)
 	
 	declare @tmps table(
@@ -57,20 +63,23 @@ zxls_csa:--zxls_csa
 	declare @qno int
 	select @count=1, @pno = 0
 	declare cursor_table cursor for
-	select a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r from ztmpxls order by cast(noa as int)
+	select a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t from ztmpxls order by cast(noa as int)
 	open cursor_table
 	fetch next from cursor_table
-	into @a,@b,@c,@d,@e,@f,@g,@h,@i,@j,@k,@l,@m,@n,@o,@p,@q,@r
+	into @a,@b,@c,@d,@e,@f,@g,@h,@i,@j,@k,@l,@m,@n,@o,@p,@q,@r,@s,@t
 	while(@@FETCH_STATUS <> -1)
 	begin
 		begin try
 			if(LEN(@a)>0)
 			begin
 				select @pno = @pno + 1,@qno = 1
-				insert into @tmp(pno,datea,trandate,mon,interval,ordeno,cartype,price,custno,addrno,uccno,memo)
-				values(@pno,@a,@b,@c,@d,@e,@f,cast(@g as float),@h,@i,@j,@k)
-				insert into @tmps(pno,qno,carno,calctype,[weight],mount,price,discount,[money])
-				values(@pno,@qno,@l,@m,cast(@n as float),cast(@o as float),cast(@p as float),cast(@q as float),cast(@r as float))	
+				insert into @tmp(pno,datea,trandate,mon,interval,ordeno,cartype,price,custno,addrno,uccno,memo,tgg,cardeal)
+				values(@pno,@a,@b,@c,@d,@e,@f,cast(@g as float),@h,@i,@j,@k,@l,@m)
+				
+				insert into @tmps(pno,qno,carno,calctype,[weight],mount
+					,price,discount,[money])
+				values(@pno,@qno,@l,@o,cast(replace(@p,',','') as float),cast(replace(@q,',','') as float)
+					,cast(replace(@r,',','') as float),cast(replace(@s,',','') as float),cast(replace(@t,',','') as float))	
 			end
 			else
 			begin
@@ -84,7 +93,7 @@ zxls_csa:--zxls_csa
 		
 		end catch
 		fetch next from cursor_table
-		into @a,@b,@c,@d,@e,@f,@g,@h,@i,@j,@k,@l,@m,@n,@o,@p,@q,@r
+		into @a,@b,@c,@d,@e,@f,@g,@h,@i,@j,@k,@l,@m,@n,@o,@p,@q,@r,@s,@t
 	end
 	close cursor_table
 	deallocate cursor_table
@@ -138,17 +147,19 @@ zxls_csa:--zxls_csa
 	close cursor_table
 	deallocate cursor_table
 	
-	insert into carcsa(noa,datea,trandate,mon,interval,ordeno,cartype,price,custno,comp,nick,addrno,addr,uccno,product,memo,[weight],mount,inmoney,outmoney,tggno,tgg)
+	insert into carcsa(noa,datea,trandate,mon,interval,ordeno,cartype,price
+	,custno,comp,nick,addrno,addr,uccno,product,memo,[weight],mount,inmoney,outmoney,tggno,tgg,cardealno,cardeal)
 	select a.noa,a.trandate,a.trandate,a.mon
 	,case when a.interval='中' then '2' when a.interval='下' then '3' else '1' end
 	,a.ordeno,a.cartype,a.price
 	,a.custno,b.comp,b.nick,a.addrno,c.addr,a.uccno,d.product,a.memo,a.[weight],a.mount,a.inmoney,a.outmoney
-	,e.noa,e.comp
+	,e.noa,e.comp,f.noa,f.acomp
 	from @tmp a
 	left join cust b on a.custno=b.noa
 	left join addr c on a.addrno=c.noa
 	left join ucc d on a.uccno=d.noa
-	outer apply (select top(1) a.noa,a.comp from tgg a where len(a.memo)>0 and a.nick=a.memo) e 
+	outer apply (select top(1) b.noa,b.comp from tgg b where len(a.tgg)>0 and b.nick=a.tgg) e
+	outer apply (select top(1) b.noa,b.acomp from acomp b where len(a.cardeal)>0 and b.nick=a.cardeal) f
 	
 	insert into carcsas(noa,noq,carno,driverno,driver,calctype,[weight],mount,discount,outprice,outmoney,inmoney)
 	select a.noa,a.noq,a.carno,b.driverno,c.namea,a.calctype,a.[weight],a.mount,a.discount,a.price,a.[money],ROUND(ISNULL(a.mount,0)*ISNULL(d.price,0),0)

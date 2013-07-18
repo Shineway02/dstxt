@@ -17,6 +17,7 @@ zxls_csc:--zxls_csc
 	declare @p nvarchar(max)
 	declare @q nvarchar(max)
 	declare @r nvarchar(max)
+	declare @s nvarchar(max)
 	----------------------------------------------------------------------
 	declare @tmp table(
 		pno int,
@@ -38,17 +39,20 @@ zxls_csc:--zxls_csc
 		outprice float,
 		discount float,
 		outmoney float,
-		memo nvarchar(max)
+		tggno nvarchar(20),
+		tgg nvarchar(50),
+		cardealno nvarchar(20),
+		cardeal nvarchar(50)
 	)
 	----------------------------------------------------------------------
 	declare @t_date nvarchar(max)
 	declare @count int
 	set @count = 1
 	declare cursor_table cursor for
-	select a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r from ztmpxls order by cast(isnull(s,'') as int),cast(isnull(t,'') as int),cast(isnull(noa,'') as int)
+	select a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s from ztmpxls order by cast(isnull(noa,'') as int)
 	open cursor_table
 	fetch next from cursor_table
-	into @a,@b,@c,@d,@e,@f,@g,@h,@i,@j,@k,@l,@m,@n,@o,@p,@q,@r
+	into @a,@b,@c,@d,@e,@f,@g,@h,@i,@j,@k,@l,@m,@n,@o,@p,@q,@r,@s
 	while(@@FETCH_STATUS <> -1)
 	begin	
 		begin try
@@ -57,10 +61,10 @@ zxls_csc:--zxls_csc
 			if(isdate(@t_date)=1)
 			begin
 				insert into @tmp(pno,datea,trandate,mon,shipno,custno,straddrno,uccno,carno,calctype
-				,[weight],inmount,inprice,inmoney,outmount,outprice,discount,outmoney,memo)
+				,[weight],inmount,inprice,inmoney,outmount,outprice,discount,outmoney,tgg,cardeal)
 				values(@count,@a,@b,@c,@d,@e,@f,@g,@h,@i
 				,cast(@j as float),cast(@k as float)/1000,cast(@l as float),cast(@m as float)
-				,cast(@n as float)/1000,cast(@o as float),cast(@p as float),cast(@q as float),@r)			
+				,cast(@n as float)/1000,cast(@o as float),cast(@p as float),cast(@q as float),@r,@s)			
 				set @count = @count + 1
 			end
 		end try
@@ -68,7 +72,7 @@ zxls_csc:--zxls_csc
 		
 		end catch
 		fetch next from cursor_table
-		into @a,@b,@c,@d,@e,@f,@g,@h,@i,@j,@k,@l,@m,@n,@o,@p,@q,@r
+		into @a,@b,@c,@d,@e,@f,@g,@h,@i,@j,@k,@l,@m,@n,@o,@p,@q,@r,@s
 	end
 	close cursor_table
 	deallocate cursor_table
@@ -118,17 +122,18 @@ zxls_csc:--zxls_csc
 
 	insert into carcsc (noa,datea,trandate,mon,carno,driverno,driver,addrno,addr
 	,calctype,discount,[weight],inprice,inmount,inmoney,outprice,outmount,outmoney
-	,boatno,custno,comp,nick,uccno,product,memo,tggno,tgg)
+	,boatno,custno,comp,nick,uccno,product,tggno,tgg,cardealno,cardeal)
 	select a.noa,a.datea,a.trandate,a.mon
 	,a.carno,b.driverno,c.namea,a.straddrno,d.addr
 	,a.calctype,a.discount,a.[weight] 
 	,a.inprice,a.inmount,a.inmoney,a.outprice,a.outmount,a.outmoney
-	,a.shipno,a.custno,e.comp,e.nick,a.uccno,f.product,a.memo
-	,g.noa,g.comp
+	,a.shipno,a.custno,e.comp,e.nick,a.uccno,f.product
+	,g.noa,g.comp,h.noa,h.acomp
 	from @tmp a
 	left join car2 b on a.carno=b.carno
 	left join driver c on b.driverno=c.noa	
 	left join addr d on a.straddrno=d.noa
 	left join cust e on a.custno=e.noa
 	left join ucc f on a.uccno=f.noa
-	outer apply (select top(1) a.noa,a.comp from tgg a where len(a.memo)>0 and a.nick=a.memo) g  ;
+	outer apply (select top(1) b.noa,b.comp from tgg b where len(a.tgg)>0 and b.nick=a.tgg) g 
+	outer apply (select top(1) b.noa,b.acomp from acomp b where len(a.cardeal)>0 and b.nick=a.cardeal) h;
