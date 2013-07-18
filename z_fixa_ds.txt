@@ -37,6 +37,7 @@ z_fixa_ds04:--z_fixa_ds04
 		tireno nvarchar(20),
 		datea nvarchar(10),
 		carno nvarchar(20),
+		cardno nvarchar(20),
 		carplateno nvarchar(20),
 		position nvarchar(20),
 		namea nvarchar(20),
@@ -46,16 +47,16 @@ z_fixa_ds04:--z_fixa_ds04
 		brand nvarchar(40),
 		price float
 	)
-	insert into @tmp(recno,typea,ctype,tireno,datea,carno,carplateno,position,namea,productno,product,brandno,brand,price)
+	insert into @tmp(recno,typea,ctype,tireno,datea,carno,cardno,carplateno,position,namea,productno,product,brandno,brand,price)
 	select ROW_NUMBER()over(PARTITION BY tireno order by tireno,datea,typea) recno,*
 	from(
-		select 1 typea,'進貨' ctype,a.tireno,b.indate datea,'' carno,'' carplateno,'' position,'' namea
+		select 1 typea,'進貨' ctype,a.tireno,b.indate datea,'' carno,'' cardno,'' carplateno,'' position,'' namea
 		,a.productno,a.product,a.brandno,a.brand,a.price
 		from fixins a
 		left join fixin b on a.noa = b.noa
 		where len(ISNULL(a.tireno,''))>0
 		union all
-		select 2 typea,'領料' ctype,a.tireno,b.outdate,b.carno,b.carplateno,a.position,e.namea 
+		select 2 typea,'領料' ctype,a.tireno,b.outdate,b.carno,b.cardno,b.carplateno,a.position,e.namea 
 		,c.productno,c.product,c.brandno,c.brand,c.price
 		from fixouts a
 		left join fixout b on a.noa = b.noa
@@ -64,14 +65,14 @@ z_fixa_ds04:--z_fixa_ds04
 		left join carkinds e on e.noa=d.carkindno and e.position=a.position
 		where len(ISNULL(a.tireno,''))>0
 		union all
-		select 3 typea,'換下' ctype,a.btireno,b.datea,'' carno,'' carplateno,'' position,'' 
+		select 3 typea,a.[action]+'換下' ctype,a.btireno,b.datea,b.carno,b.cardno,b.carplateno,'' position,'' 
 		,c.productno,c.product,c.brandno,c.brand,c.price
 		from tires a
 		left join tire b on a.noa=b.noa
 		left join fixins c on a.btireno=c.tireno
 		where len(ISNULL(a.btireno,''))>0 and len(ISNULL(a.etireno,''))>0
 		union all
-		select 4 typea,'換上' ctype,a.etireno,b.datea,b.carno,b.carplateno,a.position,e.namea 
+		select 4 typea,a.[action]+'換上' ctype,a.etireno,b.datea,b.carno,b.cardno,b.carplateno,a.position,e.namea 
 		,c.productno,c.product,c.brandno,c.brand,c.price
 		from tires a
 		left join tire b on a.noa=b.noa
@@ -163,6 +164,7 @@ z_fixa_ds01:--z_fixa_ds01
 		tggno nvarchar(20),
 		tgg	nvarchar(50),
 		carno nvarchar(20),
+		cardno nvarchar(20),
 		wmoney float,
 		cmoney float,
 		dmoney float,
@@ -184,27 +186,27 @@ z_fixa_ds01:--z_fixa_ds01
 		memos nvarchar(max)
 	)
 	
-	insert into @tmp(gno,pno,tablea,noa,datea,tggno,tgg,carno,wmoney,cmoney,dmoney,tax,discount,total)
-	select '1','1','fixa',a.noa,a.fixadate,a.tggno,a.tgg,a.carno,a.wmoney,a.cmoney,a.dmoney,a.tax,a.discount,a.total
+	insert into @tmp(gno,pno,tablea,noa,datea,tggno,tgg,carno,cardno,wmoney,cmoney,dmoney,tax,discount,total)
+	select '1','1','fixa',a.noa,a.fixadate,a.tggno,a.tgg,a.carno,a.cardno,a.wmoney,a.cmoney,a.dmoney,a.tax,a.discount,a.total
 	from fixa a 
 	where charindex('fixa',@detail01)>0
 		and a.fixadate between @t_bdate and @t_edate
 		and (a.tggno between @t_btggno and @t_etggno)
 		and (len(@t_carno)=0 or a.carno=@t_carno)
 	union all
-	select '1','2','fixin',a.noa,a.indate,a.tggno,a.tgg,'' carno,a.wmoney,a.cmoney,a.dmoney,a.tax,a.discount,a.total
+	select '1','2','fixin',a.noa,a.indate,a.tggno,a.tgg,'' carno,'' cardno,a.wmoney,a.cmoney,a.dmoney,a.tax,a.discount,a.total
 	from fixin a 
 	where charindex('fixin',@detail01)>0
 		and a.indate between @t_bdate and @t_edate
 		and (a.tggno between @t_btggno and @t_etggno)
 	union all
-	select '1','3','fixout',a.noa,a.outdate,'' tggno,'' tgg,a.carno,a.wmoney,a.cmoney,a.dmoney,0,0,a.[money]
+	select '1','3','fixout',a.noa,a.outdate,'' tggno,'' tgg,a.carno,a.cardno,a.wmoney,a.cmoney,a.dmoney,0,0,a.[money]
 	from fixout a 
 	where charindex('fixout',@detail01)>0
 		and a.outdate between @t_bdate and @t_edate
 		and (len(@t_carno)=0 or a.carno=@t_carno)
 	union all
-	select '1','3','tire',a.noa,a.datea,a.tggno,a.tgg,a.carno,a.wmoney,a.cmoney,a.dmoney,0,0,ISNULL(a.wmoney,0)+ISNULL(a.cmoney,0)+ISNULL(a.dmoney,0)
+	select '1','3','tire',a.noa,a.datea,a.tggno,a.tgg,a.carno,a.cardno,a.wmoney,a.cmoney,a.dmoney,0,0,ISNULL(a.wmoney,0)+ISNULL(a.cmoney,0)+ISNULL(a.dmoney,0)
 	from tire a 
 	where charindex('tire',@detail01)>0
 		and a.datea between @t_bdate and @t_edate
