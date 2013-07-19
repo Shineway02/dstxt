@@ -549,6 +549,12 @@ z_tran_ds09:--z_tran_ds09
 		from fixout a
 		where left(a.outdate,6) between left(@t_btrandate,6) and left(@t_etrandate,6)
 		group by LEFT(a.outdate,6),isnull(a.carno,''),isnull(a.driverno,'')
+		union all
+		select LEFT(a.datea,6),isnull(a.carno,''),isnull(a.driverno,'')
+		,SUM(ISNULL(a.wmoney,0)) fixa,SUM(ISNULL(a.cmoney,0)) tire,SUM(ISNULL(a.dmoney,0)) item
+		from tire a
+		where left(a.datea,6) between left(@t_btrandate,6) and left(@t_etrandate,6)
+		group by LEFT(a.datea,6),isnull(a.carno,''),isnull(a.driverno,'')
 		)a
 	group by mon,carno,driverno 
 	
@@ -1599,6 +1605,12 @@ z_tran_ds08:--z_tran_ds08
 		from fixout a
 		where left(a.outdate,6) between left(@t_btrandate,6) and left(@t_etrandate,6)
 		group by LEFT(a.outdate,6),isnull(a.carno,''),isnull(a.driverno,'')
+		union all
+		select LEFT(a.datea,6),isnull(a.carno,''),isnull(a.driverno,'')
+		,SUM(ISNULL(a.wmoney,0)) fixa,SUM(ISNULL(a.cmoney,0)) tire,SUM(ISNULL(a.dmoney,0)) item
+		from tire a
+		where left(a.datea,6) between left(@t_btrandate,6) and left(@t_etrandate,6)
+		group by LEFT(a.datea,6),isnull(a.carno,''),isnull(a.driverno,'')
 		)a
 	group by mon,carno,driverno 
 	
