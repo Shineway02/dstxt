@@ -876,7 +876,6 @@ z_tran_ds09:--z_tran_ds09
 	set @curline = 0
 
 	declare @tot int
-	
 	update #z_tmp_ds set cardealno = case when len(isnull(cardealno,''))=0  then 'yyyyy##' else cardealno end
 	
 	declare cursor_table cursor for
@@ -961,7 +960,7 @@ z_tran_ds09:--z_tran_ds09
 			declare cursor_table2 cursor for
 			select total,total2,reserve,tolls,custplus,custminus,carplus,carminus,oil,etc
 				,fixa,tire,item,profit,trandate,carno,driver,addrno,addr,miles
-			from #z_tmp_ds where carno=@carno
+			from #z_tmp_ds where cardealno=@cardealno
 			order by trandate,carno,driver
 			open cursor_table2
 			fetch next from cursor_table2
@@ -989,10 +988,10 @@ z_tran_ds09:--z_tran_ds09
 					select @gno = case when @profit<=0 then '9' else '8' end
 				else
 					select @gno = case when @profit<=0 then '7' else '6' end
-				insert into @tmp(page,nn,gno,recno
+				insert into @tmp(page,nn,gno,recno,cardealno,cardeal
 					,total,total2,reserve,tolls,custplus,custminus,carplus,carminus,oil,etc
 					,fixa,tire,item,profit,trandate,carno,driver,addrno,addr,miles)
-				select @page,@curline%@rowline,@gno,@recno
+				select @page,@curline%@rowline,@gno,@recno,@cardealno,@cardeal
 					,@total,@total2,@reserve,@tolls,@custplus,@custminus,@carplus,@carminus,@oil,@etc
 					,@fixa,@tire,@item,@profit,@trandate,@carno,@driver,@addrno,@addr,@miles
 				set @curline = @curline + 1
@@ -1026,7 +1025,7 @@ z_tran_ds09:--z_tran_ds09
 		,@profit=sum(isnull(profit,0))
 		,@miles=sum(isnull(miles,0))
 	from #z_tmp_ds
-	insert into @tmp(page,nn,gno,carno
+	insert into @tmp(page,nn,gno,cardealno
 		,total,total2,reserve,tolls,custplus,custminus,carplus,carminus
 		,oil,etc,fixa,tire,item,profit,miles)
 	select @page,@curline%@rowline,'10',CHAR(255)
@@ -1034,7 +1033,7 @@ z_tran_ds09:--z_tran_ds09
 		,@oil,@etc,@fixa,@tire,@item,@profit,@miles
 				
 	select a.* 
-	,case when a.cardealno='yyyyy##' then '' else a.cardeal end g00
+	,a.cardeal g00
 	,a.recno g01
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,a.total),1)),4,12)) g02
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,a.custplus),1)),4,12)) g03
@@ -1055,7 +1054,7 @@ z_tran_ds09:--z_tran_ds09
 	,a.driver g18
 	,a.addr g19
 	from @tmp a
-	order by isnull(a.cardealno,CHAR(255)),page,nn;
+	order by a.cardealno,page,nn;
 
 z_tran_ds08:--z_tran_ds08
 	SET QUOTED_IDENTIFIER OFF
