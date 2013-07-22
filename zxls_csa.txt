@@ -78,14 +78,15 @@ zxls_csa:--zxls_csa
 				
 				insert into @tmps(pno,qno,carno,calctype,[weight],mount
 					,price,discount,[money])
-				values(@pno,@qno,@l,@o,cast(replace(@p,',','') as float),cast(replace(@q,',','') as float)
+				values(@pno,@qno,@n,@o,cast(replace(@p,',','') as float),cast(replace(@q,',','') as float)
 					,cast(replace(@r,',','') as float),cast(replace(@s,',','') as float),cast(replace(@t,',','') as float))	
 			end
 			else
 			begin
 				select @qno = @qno + 1
 				insert into @tmps(pno,qno,carno,calctype,[weight],mount,price,discount,[money])
-				values(@pno,@qno,@l,@m,cast(@n as float),cast(@o as float),cast(@p as float),cast(@q as float),cast(@r as float))
+				values(@pno,@qno,@n,@o,cast(replace(@p,',','') as float),cast(replace(@q,',','') as float)
+					,cast(replace(@r,',','') as float),cast(replace(@s,',','') as float),cast(replace(@t,',','') as float))	
 			end
 			set @count = @count + 1
 		end try
@@ -149,7 +150,7 @@ zxls_csa:--zxls_csa
 	
 	insert into carcsa(noa,datea,trandate,mon,interval,ordeno,cartype,price
 	,custno,comp,nick,addrno,addr,uccno,product,memo,[weight],mount,inmoney,outmoney,tggno,tgg,cardealno,cardeal)
-	select a.noa,a.trandate,a.trandate,a.mon
+	select a.noa,a.datea,a.trandate,a.mon
 	,case when a.interval='中' then '2' when a.interval='下' then '3' else '1' end
 	,a.ordeno,a.cartype,a.price
 	,a.custno,b.comp,b.nick,a.addrno,c.addr,a.uccno,d.product,a.memo,a.[weight],a.mount,a.inmoney,a.outmoney
