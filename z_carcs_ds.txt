@@ -154,7 +154,7 @@ z_carcs_ds01:-- z_carcs_ds01 carcsa
 	,case when isnull(price2,0)=0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price2)),1)),4,12)) end pp2
 	,case when isnull(price3,0)=0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price3)),1)),4,12)) end pp3
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(mount2)),1)),4,12))+'.'+RIGHT(CAST(mount2 as nvarchar),3) mt2
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total),1)),4,12)) tot2
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total2),1)),4,12)) tot2
 	,* 
 	from @tmp order by trandate,carno;
 
@@ -313,7 +313,7 @@ z_carcs_ds02:-- z_carcs_ds02 carcsb
 	,case when isnull(price2,0)=0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price2)),1)),4,12)) end pp2
 	,case when isnull(price3,0)=0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price3)),1)),4,12)) end pp3
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(mount2)),1)),4,12))+'.'+RIGHT(CAST(mount2 as nvarchar),3) mt2
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total),1)),4,12)) tot2
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total2),1)),4,12)) tot2
 	,* 
 	from @tmp order by trandate,carno;
 
@@ -472,6 +472,6 @@ z_carcs_ds03:-- z_carcs_ds03 carcsc
 	,case when isnull(price2,0)=0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price2)),1)),4,12)) end pp2
 	,case when isnull(price3,0)=0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price3)),1)),4,12)) end pp3
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(mount2)),1)),4,12))+'.'+RIGHT(CAST(mount2 as nvarchar),3) mt2
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total),1)),4,12)) tot2
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total2),1)),4,12)) tot2
 	,* 
 	from @tmp order by trandate,carno;
