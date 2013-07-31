@@ -142,7 +142,7 @@ z_trans_ds01:-- z_trans_ds01
 			end
 			break
 		end
-		insert into #tggno select LEFT(@string,@n-1)	
+		insert into #cardealno select LEFT(@string,@n-1)	
 		set @string = SUBSTRING(@string,@n+1,LEN(@string)-@n)
 	end
 	-------------------------------------------------------------------------------------------
