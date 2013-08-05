@@ -138,6 +138,7 @@ z_fixa_ds01:--z_fixa_ds01
 	declare @t_carno nvarchar(20)
 	declare @limit float
 	declare @detail01 nvarchar(max)
+	declare @option01 nvarchar(max)
 	
 	set @t_accy = '[1]'
 	set @t_name = '[2]'
@@ -153,6 +154,7 @@ z_fixa_ds01:--z_fixa_ds01
 		set @limit = 0
 	END CATCH
 	set @detail01 = case when '#non'=[9] then '' else [9] end
+	set @option01 = case when '#non'=[11] then '' else [11] end
 	------------------------------------------------------------------------
 	declare @tmp table(
 		gno nvarchar(10),
