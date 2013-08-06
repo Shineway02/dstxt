@@ -160,12 +160,12 @@ z_trans_ds01:-- z_trans_ds01
 		custno nvarchar(20),
 		cust nvarchar(40),
 		
-		price decimal(12,3),
-		mount decimal(12,3),
+		price decimal(15,3),
+		mount decimal(15,3),
 		total float,
-		price2 decimal(12,3),
-		price3 decimal(12,3),
-		mount2 decimal(12,3),
+		price2 decimal(15,3),
+		price3 decimal(15,3),
+		mount2 decimal(15,3),
 		discount decimal(12,3),
 		total2 float,
 		
@@ -200,11 +200,11 @@ z_trans_ds01:-- z_trans_ds01
 	
 	select case when trandate=char(255) then '1' else '0' end gno
 	,ROW_NUMBER()over(order by trandate,carno) rr
-	,case when isnull(price,0)=0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price)),1)),4,12)) end pp1
+	,case when isnull(price,0)=0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price)),1)),4,12))+'.'+RIGHT(CAST(price as nvarchar),3) end pp1
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(mount)),1)),4,12))+'.'+RIGHT(CAST(mount as nvarchar),3) mt1
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total),1)),4,12)) tot1
-	,case when isnull(price2,0)=0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price2)),1)),4,12)) end pp2
-	,case when isnull(price3,0)=0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price3)),1)),4,12)) end pp3
+	,case when isnull(price2,0)=0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price2)),1)),4,12))+'.'+RIGHT(CAST(price2 as nvarchar),3) end pp2
+	,case when isnull(price3,0)=0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price3)),1)),4,12))+'.'+RIGHT(CAST(price3 as nvarchar),3) end pp3
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(mount2)),1)),4,12))+'.'+RIGHT(CAST(mount2 as nvarchar),3) mt2
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total2),1)),4,12)) tot2
 	,* 
