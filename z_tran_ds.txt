@@ -292,6 +292,7 @@ z_tran_ds09:--z_tran_ds09
 	where (left(a.acc1,4)!='2195') and (left(a.acc1,4)!='1191') 
 	and (left(a.acc1,4)!='2191') and (left(a.acc1,4)!='1149') 
 	and (left(a.acc1,4)!='1194') and (left(a.acc1,4)!='1129') 
+	and (left(a.acc1,4)!='4201') and (left(a.acc1,4)!='4202') 
 	and left(a.datea,6) between left(@t_btrandate,6) and left(@t_etrandate,6)
 	group by LEFT(a.datea,6),isnull(a.custno,'')
 	--收金額合計
@@ -414,6 +415,7 @@ z_tran_ds09:--z_tran_ds09
 	where (left(a.acc1,4)!='2195') and (left(a.acc1,4)!='1191') 
 	and (left(a.acc1,4)!='2191') and (left(a.acc1,4)!='1149') 
 	and (left(a.acc1,4)!='1194') and (left(a.acc1,4)!='1129') 
+	and (left(a.acc1,4)!='4201') and (left(a.acc1,4)!='4202') 
 	and left(a.datea,6) between left(@t_btrandate,6) and left(@t_etrandate,6)
 	group by LEFT(a.datea,6),isnull(a.carno,''),isnull(a.driverno,'')
 	--發金額合計
@@ -1347,6 +1349,7 @@ z_tran_ds08:--z_tran_ds08
 	where (left(a.acc1,4)!='2195') and (left(a.acc1,4)!='1191') 
 	and (left(a.acc1,4)!='2191') and (left(a.acc1,4)!='1149') 
 	and (left(a.acc1,4)!='1194') and (left(a.acc1,4)!='1129') 
+	and (left(a.acc1,4)!='4201') and (left(a.acc1,4)!='4202') 
 	and left(a.datea,6) between left(@t_btrandate,6) and left(@t_etrandate,6)
 	group by LEFT(a.datea,6),isnull(a.custno,'')
 	--收金額合計
@@ -1469,6 +1472,7 @@ z_tran_ds08:--z_tran_ds08
 	where (left(a.acc1,4)!='2195') and (left(a.acc1,4)!='1191') 
 	and (left(a.acc1,4)!='2191') and (left(a.acc1,4)!='1149') 
 	and (left(a.acc1,4)!='1194') and (left(a.acc1,4)!='1129') 
+	and (left(a.acc1,4)!='4201') and (left(a.acc1,4)!='4202') 
 	and left(a.datea,6) between left(@t_btrandate,6) and left(@t_etrandate,6)
 	group by LEFT(a.datea,6),isnull(a.carno,''),isnull(a.driverno,'')
 	--發金額合計
