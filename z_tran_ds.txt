@@ -538,7 +538,7 @@ z_tran_ds09:--z_tran_ds09
 		caritem float
 	)
 	insert into @tmp03(mon,carno,driverno,fixa,tire,item)
-	select mon,carno,driverno,SUM(fixa),SUM(tire),SUM(item)
+	select mon,carno,driverno,round(SUM(fixa),0),round(SUM(tire),0),round(SUM(item),0)
 	from(
 		select LEFT(a.fixadate,6) mon,isnull(a.carno,'') carno,isnull(a.driverno,'') driverno
 		,SUM(ISNULL(a.wmoney,0)) fixa,SUM(ISNULL(a.cmoney,0)) tire,SUM(ISNULL(a.dmoney,0)) item
@@ -1595,7 +1595,7 @@ z_tran_ds08:--z_tran_ds08
 		caritem float
 	)
 	insert into @tmp03(mon,carno,driverno,fixa,tire,item)
-	select mon,carno,driverno,SUM(fixa),SUM(tire),SUM(item)
+	select mon,carno,driverno,round(SUM(fixa),0),round(SUM(tire),0),round(SUM(item),0)
 	from(
 		select LEFT(a.fixadate,6) mon,isnull(a.carno,'') carno,isnull(a.driverno,'') driverno
 		,SUM(ISNULL(a.wmoney,0)) fixa,SUM(ISNULL(a.cmoney,0)) tire,SUM(ISNULL(a.dmoney,0)) item
