@@ -64,10 +64,15 @@ zxls_csc:--zxls_csc
 				if(isdate(@t_date)=1)
 				begin
 					insert into @tmp(pno,datea,trandate,mon,shipno,custno,straddrno,uccno,carno,calctype
-					,[weight],inmount,inprice,inmoney,outmount,outprice,discount,outmoney,tgg,cardeal)
+					,[weight]
+					,inmount,inprice,inmoney
+					,outmount,outprice,discount,outmoney
+					,tgg,cardeal)
 					values(@count,@a,@b,@c,@d,@e,@f,@g,@h,@i
-					,cast(@j as float),cast(@k as float)/1000,cast(@l as float),cast(@m as float)
-					,cast(@n as float)/1000,cast(@o as float),cast(@p as float),cast(@q as float),@r,@s)			
+					,cast(@j as float)
+					,cast(@k as float)/1000,cast(@l as float),round(cast(@m as float),0)
+					,cast(@n as float)/1000,cast(@o as float),cast(@p as float),round(cast(@q as float),0)
+					,@r,@s)			
 					set @count = @count + 1
 				end
 			end
