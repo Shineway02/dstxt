@@ -288,7 +288,7 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 			,g31,g32,g33,g34,g35,g36,g37,g38,g39,g3a)
 			values(@page,@n%@rowline,'4',@driverno,@driver
 			,CAST(@recno+1 as nvarchar),@trandate,@carno,@addr,@product
-			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@mount)),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3) 
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money, case when @mount>0 then floor(@mount) else ceiling(@mount) end),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3) 
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@price)),1)),4,12))+'.'+RIGHT(CAST(@price as nvarchar),3) 
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@total),1)),4,12)),@po
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@discount)),1)),4,12))+'.'+RIGHT(CAST(@discount as nvarchar),3))
@@ -396,7 +396,7 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 		select @money=ISNULL(@money,0),@plus=ISNULL(@plus,0),@minus=ISNULL(@minus,0),@total=ISNULL(@money,0)+ISNULL(@plus,0)-ISNULL(@minus,0)
 		insert into @tmp(page,n,gno,driverno,driver,g51,g52,g53,g54,g55)
 			values(@page,@n%@rowline,'6',@driverno,@driver
-			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@mount)),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3) 
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money, case when @mount>0 then floor(@mount) else ceiling(@mount) end),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3)
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@money),1)),4,12))
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@plus),1)),4,12))
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@minus),1)),4,12))
@@ -704,7 +704,7 @@ z_tre_ds04:--z_tre_ds04  ref z_tre_ds02
 			,g31,g32,g33,g34,g35,g36,g37,g38,g39,g3a)
 			values(@page,@n%@rowline,'4',@driverno,@driver
 			,CAST(@recno+1 as nvarchar),@trandate,@carno,@addr,@product
-			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@mount)),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3) 
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money, case when @mount>0 then floor(@mount) else ceiling(@mount) end),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3)
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@price)),1)),4,12))+'.'+RIGHT(CAST(@price as nvarchar),3) 
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@total),1)),4,12)),@po
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@discount)),1)),4,12))+'.'+RIGHT(CAST(@discount as nvarchar),3))
@@ -812,7 +812,7 @@ z_tre_ds04:--z_tre_ds04  ref z_tre_ds02
 		select @money=ISNULL(@money,0),@plus=ISNULL(@plus,0),@minus=ISNULL(@minus,0),@total=ISNULL(@money,0)+ISNULL(@plus,0)-ISNULL(@minus,0)
 		insert into @tmp(page,n,gno,driverno,driver,g51,g52,g53,g54,g55)
 			values(@page,@n%@rowline,'6',@driverno,@driver
-			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@mount)),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3) 
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money, case when @mount>0 then floor(@mount) else ceiling(@mount) end),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3)
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@money),1)),4,12))
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@plus),1)),4,12))
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@minus),1)),4,12))
@@ -1118,7 +1118,7 @@ z_tre_ds03:--z_tre_ds03  ref z_tre_ds01
 			,g31,g32,g33,g34,g35,g36,g37,g38,g39,g3a)
 			values(@page,@n%@rowline,'4',@tggno,@tgg,@tggnick
 			,CAST(@recno+1 as nvarchar),@trandate,@carno,@addr,@product
-			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@mount)),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3) 
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money, case when @mount>0 then floor(@mount) else ceiling(@mount) end),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3)
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@price)),1)),4,12))+'.'+RIGHT(CAST(@price as nvarchar),3) 
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@total),1)),4,12)),@po
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@discount)),1)),4,12))+'.'+RIGHT(CAST(@discount as nvarchar),3) )
@@ -1226,7 +1226,7 @@ z_tre_ds03:--z_tre_ds03  ref z_tre_ds01
 		select @money=ISNULL(@money,0),@plus=ISNULL(@plus,0),@minus=ISNULL(@minus,0),@total=ISNULL(@money,0)+ISNULL(@plus,0)-ISNULL(@minus,0)
 		insert into @tmp(page,n,gno,tggno,tgg,tggnick,g51,g52,g53,g54,g55)
 			values(@page,@n%@rowline,'6',@tggno,@tgg,@tggnick
-			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@mount)),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3) 
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money, case when @mount>0 then floor(@mount) else ceiling(@mount) end),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3)
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@money),1)),4,12))
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@plus),1)),4,12))
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@minus),1)),4,12))
@@ -1534,7 +1534,7 @@ z_tre_ds02:--z_tre_ds02
 			,g31,g32,g33,g34,g35,g36,g37,g38,g39,g3a)
 			values(@page,@n%@rowline,'4',@driverno,@driver
 			,CAST(@recno+1 as nvarchar),@trandate,@carno,@addr,@product
-			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@mount)),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3) 
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money, case when @mount>0 then floor(@mount) else ceiling(@mount) end),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3)
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@price)),1)),4,12))+'.'+RIGHT(CAST(@price as nvarchar),3) 
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@total),1)),4,12)),@po
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@discount)),1)),4,12))+'.'+RIGHT(CAST(@discount as nvarchar),3))
@@ -1642,7 +1642,7 @@ z_tre_ds02:--z_tre_ds02
 		select @money=ISNULL(@money,0),@plus=ISNULL(@plus,0),@minus=ISNULL(@minus,0),@total=ISNULL(@money,0)+ISNULL(@plus,0)-ISNULL(@minus,0)
 		insert into @tmp(page,n,gno,driverno,driver,g51,g52,g53,g54,g55)
 			values(@page,@n%@rowline,'6',@driverno,@driver
-			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@mount)),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3) 
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money, case when @mount>0 then floor(@mount) else ceiling(@mount) end),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3)
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@money),1)),4,12))
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@plus),1)),4,12))
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@minus),1)),4,12))
@@ -1948,7 +1948,7 @@ z_tre_ds01:--z_tre_ds01
 			,g31,g32,g33,g34,g35,g36,g37,g38,g39,g3a)
 			values(@page,@n%@rowline,'4',@tggno,@tgg,@tggnick
 			,CAST(@recno+1 as nvarchar),@trandate,@carno,@addr,@product
-			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@mount)),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3) 
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money, case when @mount>0 then floor(@mount) else ceiling(@mount) end),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3) 
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@price)),1)),4,12))+'.'+RIGHT(CAST(@price as nvarchar),3) 
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@total),1)),4,12)),@po
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@discount)),1)),4,12))+'.'+RIGHT(CAST(@discount as nvarchar),3) )
@@ -2056,7 +2056,7 @@ z_tre_ds01:--z_tre_ds01
 		select @money=ISNULL(@money,0),@plus=ISNULL(@plus,0),@minus=ISNULL(@minus,0),@total=ISNULL(@money,0)+ISNULL(@plus,0)-ISNULL(@minus,0)
 		insert into @tmp(page,n,gno,tggno,tgg,tggnick,g51,g52,g53,g54,g55)
 			values(@page,@n%@rowline,'6',@tggno,@tgg,@tggnick
-			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@mount)),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3) 
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money, case when @mount>0 then floor(@mount) else ceiling(@mount) end),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3)
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@money),1)),4,12))
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@plus),1)),4,12))
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@minus),1)),4,12))
