@@ -225,7 +225,7 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 	declare @page int
 	declare @recno int
 	declare @curline int -- 當前行數
-	set @rowline = 41
+	set @rowline = 40
 	set @endline = 2
 	set @page = 0
 	
