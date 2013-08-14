@@ -4847,7 +4847,7 @@ z_tran_ds06:--z_tran_ds06
 		addr nvarchar(20),
 		carno nvarchar(20),
 		product nvarchar(20),
-		mount decimal(10,3),
+		mount decimal(15,3),
 		price decimal(10,3),
 		[money] float,
 		custorde nvarchar(40),
@@ -4940,7 +4940,7 @@ z_tran_ds06:--z_tran_ds06
 	select * 
 	,trandate dd
 	,product pp
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money, case when @mount>0 then floor(@mount) else ceiling(@mount) end),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3)  mt
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money, case when mount>0 then floor(mount) else ceiling(mount) end),1)),4,12))+'.'+RIGHT(CAST(mount as nvarchar),3)  mt
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price)),1)),4,12))+'.'+RIGHT(CAST(price as nvarchar),3) mp
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,[money]),1)),4,12)) mm
 	--from @tmp order by custno,trandate,pno,addrno,addr,tranno
