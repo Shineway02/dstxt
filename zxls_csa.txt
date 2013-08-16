@@ -63,7 +63,7 @@ zxls_csa:--zxls_csa
 	declare @qno int
 	select @count=1, @pno = 0
 	declare cursor_table cursor for
-	select a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t from ztmpxls order by cast(noa as int)
+	select a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t from ztmpxls where len(isnull(@n,''))>0 order by cast(noa as int)
 	open cursor_table
 	fetch next from cursor_table
 	into @a,@b,@c,@d,@e,@f,@g,@h,@i,@j,@k,@l,@m,@n,@o,@p,@q,@r,@s,@t
