@@ -122,7 +122,7 @@ z_carcs_ds01:-- z_carcs_ds01 carcsa
 		cardealno nvarchar(20),
 		cardeal nvarchar(40)
 	)
-	
+	 
 	insert into @tmp(noa,datea,trandate,carno,driverno,driver,addrno,addr,productno,product,custno,cust
 		,price,mount,total,price2,price3,mount2,discount,total2,tggno,tgg,cardealno,cardeal)
 	select a.noa,b.datea,b.trandate,a.carno,a.driverno,a.driver,b.addrno,b.addr,b.uccno,b.product,b.custno,c.nick

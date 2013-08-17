@@ -1,4 +1,12 @@
 zxls_csc:--zxls_csc
+	SET QUOTED_IDENTIFIER OFF
+	declare @cmd nvarchar(max)
+	declare @workerno nvarchar(20)
+	declare @worker nvarchar(20)
+	
+	set @workerno=[1]
+	set @worker=[2]
+	
 	declare @a nvarchar(max)
 	declare @b nvarchar(max)
 	declare @c nvarchar(max)
@@ -131,10 +139,10 @@ zxls_csc:--zxls_csc
 	close cursor_table
 	deallocate cursor_table
 
-	insert into carcsc (noa,datea,trandate,mon,carno,driverno,driver,addrno,addr
+	insert into carcsc (worker,noa,datea,trandate,mon,carno,driverno,driver,addrno,addr
 	,calctype,discount,[weight],inprice,inmount,inmoney,outprice,outmount,outmoney
 	,boatno,custno,comp,nick,uccno,product,tggno,tgg,cardealno,cardeal)
-	select a.noa,a.datea,a.trandate,a.mon
+	select @worker,a.noa,a.datea,a.trandate,a.mon
 	,a.carno,b.driverno,c.namea,a.straddrno,d.addr
 	,a.calctype,a.discount,a.[weight] 
 	,a.inprice,a.inmount,a.inmoney,a.outprice,a.outmount,a.outmoney
@@ -146,5 +154,5 @@ zxls_csc:--zxls_csc
 	left join addr d on a.straddrno=d.noa
 	left join cust e on a.custno=e.noa
 	left join ucc f on a.uccno=f.noa
-	outer apply (select top(1) b.noa,b.comp from tgg b where len(a.tgg)>0 and b.nick=a.tgg) g 
-	outer apply (select top(1) b.noa,b.acomp from acomp b where len(a.cardeal)>0 and b.nick=a.cardeal) h;
+	outer apply (select top(1) b.noa,b.comp from tgg b where len(a.tgg)>0 and b.nick=ltrim(rtrim(a.tgg))) g 
+	outer apply (select top(1) b.noa,b.acomp from acomp b where len(a.cardeal)>0 and b.nick=ltrim(rtrim(a.cardeal))) h;
