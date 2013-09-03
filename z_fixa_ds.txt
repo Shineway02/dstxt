@@ -50,7 +50,7 @@ z_fixa_ds04:--z_fixa_ds04
 	insert into @tmp(recno,typea,ctype,tireno,datea,carno,cardno,carplateno,position,namea,productno,product,brandno,brand,price)
 	select ROW_NUMBER()over(PARTITION BY tireno order by tireno,datea,typea) recno,*
 	from(
-		select 1 typea,'進貨' ctype,a.tireno,b.indate datea,'' carno,'' cardno,'' carplateno,'' position,'' namea
+		select 1 typea,case when tiretype='zz' then '報廢' else '進貨' end ctype,a.tireno,b.indate datea,'' carno,'' cardno,'' carplateno,'' position,'' namea
 		,a.productno,a.product,a.brandno,a.brand,a.price
 		from fixins a
 		left join fixin b on a.noa = b.noa
