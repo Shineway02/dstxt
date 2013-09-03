@@ -70,7 +70,7 @@ z_fixa_ds04:--z_fixa_ds04
 		from tires a
 		left join tire b on a.noa=b.noa
 		left join fixins c on a.btireno=c.tireno
-		where len(ISNULL(a.btireno,''))>0 and len(ISNULL(a.etireno,''))>0
+		where len(ISNULL(a.btireno,''))>0 --and len(ISNULL(a.etireno,''))>0
 		union all
 		select 4 typea,a.[action]+'換上' ctype,a.etireno,b.datea,b.carno,b.cardno,b.carplateno,a.position,e.namea 
 		,c.productno,c.product,c.brandno,c.brand,c.price
