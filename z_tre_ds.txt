@@ -353,7 +353,7 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 			set @curline = @curline + 1
 			set @n = @n + 1
 			set @totcount = @totcount - 1
-			if(@curline%@rowline=0 and @totcount>0)
+			if(@curline%@rowline=0 and @totcount>=0)
 			begin
 				set @page = @page + 1
 				if(@totcount>0)
