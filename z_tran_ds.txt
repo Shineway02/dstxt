@@ -4484,6 +4484,7 @@ z_tran_ds05:--z_tran_ds05
 	----------------------------------------------------------------------------------------------
 	declare @count int
 	declare @mount float
+	declare @total float
 	declare @mount2 float
 	declare @total2 float
 	declare @drivermoney float
@@ -4561,27 +4562,28 @@ z_tran_ds05:--z_tran_ds05
 		
 	select @count=count(1),@mount=SUM(ISNULL(mount,0)),@mount2=SUM(ISNULL(mount2,0)),@total2=SUM(ISNULL(total2,0)),@drivermoney=SUM(ISNULL(drivermoney,0))
 	,@outmount=SUM(isnull(outmount,0)),@pton2=SUM(ISNULL(pton2,0))
-	,@inmount=SUM(ISNULL(inmount,0)),@pton=SUM(ISNULL(pton,0)) from #t_tran_ds05
-	insert into #t_tran_ds05 (gno,driverno,carno,carcount,mount,mount2,total2,drivermoney,outmount,pton2,inmount,pton)
-	values('2',CHAR(255),CHAR(255),@count,@mount,@mount2,@total2,@drivermoney,@outmount,@pton2,@inmount,@pton) 
+	,@inmount=SUM(ISNULL(inmount,0)),@pton=SUM(ISNULL(pton,0))
+	,@total=SUM(ISNULL(total,0)) from #t_tran_ds05
+	insert into #t_tran_ds05 (gno,driverno,carno,carcount,mount,total,mount2,total2,drivermoney,outmount,pton2,inmount,pton)
+	values('2',CHAR(255),CHAR(255),@count,@mount,@total,@mount2,@total2,@drivermoney,@outmount,@pton2,@inmount,@pton) 
 	
 	
 	if @t_sort05='carno'  or @t_sort05='noa' or @t_sort05='driverno' 
 	begin 
 		declare cursor_table cursor for
-		select driverno,carno,count(1),max(noa),sum(isnull(mount,0)),sum(isnull(mount2,0)),sum(isnull(total2,0)),SUM(ISNULL(drivermoney,0))
+		select driverno,carno,count(1),max(noa),sum(isnull(mount,0)),sum(isnull(total,0)),sum(isnull(mount2,0)),sum(isnull(total2,0)),SUM(ISNULL(drivermoney,0))
 		,SUM(isnull(outmount,0)),SUM(ISNULL(pton2,0)) 
 		,SUM(isnull(inmount,0)),SUM(ISNULL(pton,0)) 
 		from #t_tran_ds05 where gno='0' group  by  driverno,carno
 		open cursor_table
 		fetch next from cursor_table
-		into @driverno,@carno,@count,@noa,@mount,@mount2,@total2,@drivermoney,@outmount,@pton2,@inmount,@pton
+		into @driverno,@carno,@count,@noa,@mount,@total,@mount2,@total2,@drivermoney,@outmount,@pton2,@inmount,@pton
 		while(@@FETCH_STATUS <> -1)
 		begin
-			insert  into #t_tran_ds05(gno,driverno,carno,carcount,noa,mount,mount2,total2,drivermoney,outmount,pton2,inmount,pton)
-			values('1',@driverno,@carno,@count,@noa+CHAR(255),@mount,@mount2,@total2,@drivermoney,@outmount,@pton2,@inmount,@pton)		
+			insert  into #t_tran_ds05(gno,driverno,carno,carcount,noa,mount,total,mount2,total2,drivermoney,outmount,pton2,inmount,pton)
+			values('1',@driverno,@carno,@count,@noa+CHAR(255),@mount,@total,@mount2,@total2,@drivermoney,@outmount,@pton2,@inmount,@pton)		
 			fetch next from cursor_table
-			into @driverno,@carno,@count,@noa,@mount,@mount2,@total2,@drivermoney,@outmount,@pton2,@inmount,@pton
+			into @driverno,@carno,@count,@noa,@mount,@total,@mount2,@total2,@drivermoney,@outmount,@pton2,@inmount,@pton
 		end
 		close cursor_table
 		deallocate cursor_table
@@ -4630,7 +4632,8 @@ z_tran_ds05:--z_tran_ds05
 			" case when price2=0 then price3 else price2 end gg,discount hh,"+
 			" reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total2),1)),4,12)) ii,"+
 			" caseno jj,case when right(noa,1)=char(255) then '' else noa  end kk, "+
-			" reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,drivermoney),1)),4,12)) dm"+
+			" reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,drivermoney),1)),4,12)) dm,"+
+			" reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total),1)),4,12)) ff3"+
 			" from  #t_tran_ds05  order  by driverno,carno,gno,noa"
 	end
 	else
@@ -4639,7 +4642,8 @@ z_tran_ds05:--z_tran_ds05
 			" case when price2=0 then price3 else price2 end gg,discount hh,"+
 			" reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total2),1)),4,12)) ii,"+
 			" caseno jj,noa kk, "+
-			" reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,drivermoney),1)),4,12)) dm"+
+			" reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,drivermoney),1)),4,12)) dm,"+
+			" reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total),1)),4,12)) ff3"+
 			" from  #t_tran_ds05  order  by driverno,carno,gno,["+@t_sort05+"],noa"
 	end
 	EXECUTE sp_executesql @cmd,N'@string nvarchar(max)',@string=@string
