@@ -26,6 +26,7 @@ zxls_csc:--zxls_csc
 	declare @q nvarchar(max)
 	declare @r nvarchar(max)
 	declare @s nvarchar(max)
+	declare @t nvarchar(max)
 	----------------------------------------------------------------------
 	declare @tmp table(
 		pno int,
@@ -50,17 +51,18 @@ zxls_csc:--zxls_csc
 		tggno nvarchar(20),
 		tgg nvarchar(50),
 		cardealno nvarchar(20),
-		cardeal nvarchar(50)
+		cardeal nvarchar(50),
+		memo nvarchar(max)
 	)
 	----------------------------------------------------------------------
 	declare @t_date nvarchar(max)
 	declare @count int
 	set @count = 1
 	declare cursor_table cursor for
-	select a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s from ztmpxls order by cast(isnull(noa,'') as int)
+	select a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t from ztmpxls order by cast(isnull(noa,'') as int)
 	open cursor_table
 	fetch next from cursor_table
-	into @a,@b,@c,@d,@e,@f,@g,@h,@i,@j,@k,@l,@m,@n,@o,@p,@q,@r,@s
+	into @a,@b,@c,@d,@e,@f,@g,@h,@i,@j,@k,@l,@m,@n,@o,@p,@q,@r,@s,@t
 	while(@@FETCH_STATUS <> -1)
 	begin	
 		begin try
@@ -75,14 +77,14 @@ zxls_csc:--zxls_csc
 					,[weight]
 					,inmount,inprice,inmoney
 					,outmount,outprice,discount,outmoney
-					,tgg,cardeal)
+					,tgg,cardeal,memo)
 					values(@count,@a,@b,@c,@d,@e,@f,@g,@h,@i
 					,cast(replace(@j,',','') as float)
 					,cast(replace(@k,',','') as float)/1000,cast(replace(@l,',','') as float)
 					,round(cast(replace(@k,',','') as float)/1000*cast(replace(@l,',','') as float),0)
 					,cast(replace(@n,',','') as float)/1000,cast(replace(@o,',','') as float),cast(replace(@p,',','') as float)
 					,round(cast(replace(@n,',','') as float)/1000*cast(replace(@o,',','') as float)*cast(replace(@p,',','') as float),0)
-					,@r,@s)			
+					,@r,@s,@t)			
 					set @count = @count + 1
 				end
 			end
@@ -91,7 +93,7 @@ zxls_csc:--zxls_csc
 		
 		end catch
 		fetch next from cursor_table
-		into @a,@b,@c,@d,@e,@f,@g,@h,@i,@j,@k,@l,@m,@n,@o,@p,@q,@r,@s
+		into @a,@b,@c,@d,@e,@f,@g,@h,@i,@j,@k,@l,@m,@n,@o,@p,@q,@r,@s,@t
 	end
 	close cursor_table
 	deallocate cursor_table
@@ -141,13 +143,13 @@ zxls_csc:--zxls_csc
 
 	insert into carcsc (worker,noa,datea,trandate,mon,carno,driverno,driver,addrno,addr
 	,calctype,discount,[weight],inprice,inmount,inmoney,outprice,outmount,outmoney
-	,boatno,custno,comp,nick,uccno,product,tggno,tgg,cardealno,cardeal)
+	,boatno,custno,comp,nick,uccno,product,tggno,tgg,cardealno,cardeal,memo)
 	select @worker,a.noa,a.datea,a.trandate,a.mon
 	,a.carno,b.driverno,c.namea,a.straddrno,d.addr
 	,a.calctype,a.discount,a.[weight] 
 	,a.inprice,a.inmount,a.inmoney,a.outprice,a.outmount,a.outmoney
 	,a.shipno,a.custno,e.comp,e.nick,a.uccno,f.product
-	,g.noa,g.comp,h.noa,h.acomp
+	,g.noa,g.comp,h.noa,h.acomp,a.memo
 	from @tmp a
 	left join car2 b on a.carno=b.carno
 	left join driver c on b.driverno=c.noa	
