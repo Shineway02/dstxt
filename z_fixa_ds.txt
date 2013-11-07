@@ -169,6 +169,7 @@ z_fixa_ds01:--z_fixa_ds01
 		wmoney float,
 		cmoney float,
 		dmoney float,
+		emoney float,
 		tax float,
 		discount float,
 		total float,
@@ -187,27 +188,27 @@ z_fixa_ds01:--z_fixa_ds01
 		memos nvarchar(max)
 	)
 	
-	insert into @tmp(gno,pno,tablea,noa,datea,tggno,tgg,carno,cardno,wmoney,cmoney,dmoney,tax,discount,total)
-	select '1','1','fixa',a.noa,a.fixadate,a.tggno,a.tgg,a.carno,a.cardno,a.wmoney,a.cmoney,a.dmoney,a.tax,a.discount,a.total
+	insert into @tmp(gno,pno,tablea,noa,datea,tggno,tgg,carno,cardno,wmoney,cmoney,dmoney,emoney,tax,discount,total)
+	select '1','1','fixa',a.noa,a.fixadate,a.tggno,a.tgg,a.carno,a.cardno,a.wmoney,a.cmoney,a.dmoney,a.emoney,a.tax,a.discount,a.total
 	from fixa a 
 	where charindex('fixa',@detail01)>0
 		and a.fixadate between @t_bdate and @t_edate
 		and (a.tggno between @t_btggno and @t_etggno)
 		and (len(@t_carno)=0 or a.carno=@t_carno)
 	union all
-	select '1','2','fixin',a.noa,a.indate,a.tggno,a.tgg,'' carno,'' cardno,a.wmoney,a.cmoney,a.dmoney,a.tax,a.discount,a.total
+	select '1','2','fixin',a.noa,a.indate,a.tggno,a.tgg,'' carno,'' cardno,a.wmoney,a.cmoney,a.dmoney,a.emoney,a.tax,a.discount,a.total
 	from fixin a 
 	where charindex('fixin',@detail01)>0
 		and a.indate between @t_bdate and @t_edate
 		and (a.tggno between @t_btggno and @t_etggno)
 	union all
-	select '1','3','fixout',a.noa,a.outdate,'' tggno,'' tgg,a.carno,a.cardno,a.wmoney,a.cmoney,a.dmoney,0,0,a.[money]
+	select '1','3','fixout',a.noa,a.outdate,'' tggno,'' tgg,a.carno,a.cardno,a.wmoney,a.cmoney,a.dmoney,a.emoney,0,0,a.[money]
 	from fixout a 
 	where charindex('fixout',@detail01)>0
 		and a.outdate between @t_bdate and @t_edate
 		and (len(@t_carno)=0 or a.carno=@t_carno)
 	union all
-	select '1','3','tire',a.noa,a.datea,a.tggno,a.tgg,a.carno,a.cardno,a.wmoney,a.cmoney,a.dmoney,0,0,ISNULL(a.wmoney,0)+ISNULL(a.cmoney,0)+ISNULL(a.dmoney,0)
+	select '1','3','tire',a.noa,a.datea,a.tggno,a.tgg,a.carno,a.cardno,a.wmoney,a.cmoney,a.dmoney,a.emoney,0,0,ISNULL(a.wmoney,0)+ISNULL(a.cmoney,0)+ISNULL(a.dmoney,0)
 	from tire a 
 	where charindex('tire',@detail01)>0
 		and a.datea between @t_bdate and @t_edate
@@ -242,84 +243,86 @@ z_fixa_ds01:--z_fixa_ds01
 	--fixa
 	if(charindex('fixa',@detail01)>0)
 	begin
-		insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,tax,discount,total)
-		select '3','5','維修',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0))
+		insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,emoney,tax,discount,total)
+		select '3','5','維修',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0)),SUM(ISNULL(emoney,0))
 		,SUM(ISNULL(tax,0)),SUM(ISNULL(discount,0)),SUM(ISNULL(total,0))
 		from @tmp where gno='1' and tablea='fixa'
 	end
 	--fixin
 	if(charindex('fixin',@detail01)>0)
 	begin
-		insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,tax,discount,total)
-		select '3','6','進貨',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0))
+		insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,emoney,tax,discount,total)
+		select '3','6','進貨',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0)),SUM(ISNULL(dmoney,0))
 		,SUM(ISNULL(tax,0)),SUM(ISNULL(discount,0)),SUM(ISNULL(total,0))
 		from @tmp where gno='1' and tablea='fixin'
 	end
 	--fixout
 	if(charindex('fixout',@detail01)>0)
 	begin
-		insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,tax,discount,total)
-		select '3','7','領料',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0))
+		insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,emoney,tax,discount,total)
+		select '3','7','領料',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0)),SUM(ISNULL(dmoney,0))
 		,SUM(ISNULL(tax,0)),SUM(ISNULL(discount,0)),SUM(ISNULL(total,0))
 		from @tmp where gno='1' and tablea='fixout'
 	end
 	--tire
 	if(charindex('tire',@detail01)>0)
 	begin
-		insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,tax,discount,total)
-		select '3','8','換補',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0))
+		insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,emoney,tax,discount,total)
+		select '3','8','換補',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0)),SUM(ISNULL(dmoney,0))
 		,SUM(ISNULL(tax,0)),SUM(ISNULL(discount,0)),SUM(ISNULL(total,0))
 		from @tmp where gno='1' and tablea='tire'
 	end
 	--total
-	insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,tax,discount,total)
+	insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,emoney,tax,discount,total)
 	select '4','9','總計(不含領料、換補輪胎)'
 	,SUM(ISNULL(wmoney,0))
 	,SUM(case when tablea='fixout' or tablea='tire' then 0 else ISNULL(cmoney,0) end)
-	,SUM(ISNULL(dmoney,0))
+	,SUM(ISNULL(dmoney,0)),SUM(ISNULL(dmoney,0))
 	,SUM(ISNULL(tax,0)),SUM(ISNULL(discount,0)),SUM(ISNULL(total,0))
 	from @tmp where gno='1'
 	
 	--進貨成本
-	insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,tax,discount,total)
-	select '3','A','進貨成本(維修+進貨)',SUM(wmoney),SUM(cmoney),SUM(dmoney),SUM(tax),SUM(discount),SUM(total)
+	insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,emoney,tax,discount,total)
+	select '3','A','進貨成本(維修+進貨)',SUM(wmoney),SUM(cmoney),SUM(dmoney),SUM(emoney),SUM(tax),SUM(discount),SUM(total)
 	from(
-		select SUM(ISNULL(wmoney,0)) wmoney,SUM(ISNULL(cmoney,0)) cmoney,SUM(ISNULL(dmoney,0)) dmoney
+		select SUM(ISNULL(wmoney,0)) wmoney,SUM(ISNULL(cmoney,0)) cmoney,SUM(ISNULL(dmoney,0)) dmoney,SUM(ISNULL(dmoney,0)) emoney
 			,SUM(ISNULL(tax,0)) tax,SUM(ISNULL(discount,0)) discount,SUM(ISNULL(total,0)) total
 		from @tmp where gno='1' and tablea='fixa'
 		union all
-		select SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0))
+		select SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0)),SUM(ISNULL(dmoney,0))
 			,SUM(ISNULL(tax,0)),SUM(ISNULL(discount,0)),SUM(ISNULL(total,0))
 		from @tmp where gno='1' and tablea='fixin') a
 	--領料成本
-	insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,tax,discount,total)
-	select '3','B','領料成本(維修+領料+換補)',SUM(wmoney),SUM(cmoney),SUM(dmoney),SUM(tax),SUM(discount),SUM(total)
+	insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,emoney,tax,discount,total)
+	select '3','B','領料成本(維修+領料+換補)',SUM(wmoney),SUM(cmoney),SUM(dmoney),SUM(ISNULL(dmoney,0)),SUM(tax),SUM(discount),SUM(total)
 	from(
-		select SUM(ISNULL(wmoney,0)) wmoney,SUM(ISNULL(cmoney,0)) cmoney,SUM(ISNULL(dmoney,0)) dmoney
+		select SUM(ISNULL(wmoney,0)) wmoney,SUM(ISNULL(cmoney,0)) cmoney,SUM(ISNULL(dmoney,0)) dmoney,SUM(ISNULL(dmoney,0)) emoney
 			,SUM(ISNULL(tax,0)) tax,SUM(ISNULL(discount,0)) discount,SUM(ISNULL(total,0)) total
 		from @tmp where gno='1' and tablea='fixa'
 		union all
-		select SUM(ISNULL(wmoney,0)) wmoney,SUM(ISNULL(cmoney,0)) cmoney,SUM(ISNULL(dmoney,0)) dmoney
+		select SUM(ISNULL(wmoney,0)) wmoney,SUM(ISNULL(cmoney,0)) cmoney,SUM(ISNULL(dmoney,0)) dmoney,SUM(ISNULL(dmoney,0)) emoney
 			,SUM(ISNULL(tax,0)) tax,SUM(ISNULL(discount,0)) discount,SUM(ISNULL(total,0)) total
 		from @tmp where gno='1' and tablea='fixout'
 		union all
-		select SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0))
+		select SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0)),SUM(ISNULL(dmoney,0))
 			,SUM(ISNULL(tax,0)),SUM(ISNULL(discount,0)),SUM(ISNULL(total,0))
 		from @tmp where gno='1' and tablea='tire') a
 	---------------------
-	update @tmp set total=ISNULL(wmoney,0)+ISNULL(cmoney,0)+ISNULL(dmoney,0)+ISNULL(tax,0)-ISNULL(discount,0)
+	update @tmp set total=ISNULL(wmoney,0)+ISNULL(cmoney,0)+ISNULL(dmoney,0)+ISNULL(emoney,0)+ISNULL(tax,0)-ISNULL(discount,0)
 	
 	select a.* 
 	,b.nick nick
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,wmoney),1)),4,12)) wm
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,dmoney),1)),4,12)) dm
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,cmoney),1)),4,12)) cm
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,emoney),1)),4,12)) em
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,tax),1)),4,12)) tt
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,discount),1)),4,12)) dis
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total),1)),4,12)) tot
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(mount)),1)),4,12))+'.'+RIGHT(CAST(mount as nvarchar),3) mt
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price)),1)),4,12))+'.'+RIGHT(CAST(price as nvarchar),3) pe
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,[money]),1)),4,12)) my
+	,tablea+'_ds?left(noa,'+cast(len(a.noa) as nvarchar)+')=$noa?' qhref
 	from @tmp a
 	left join tgg b on a.tggno=b.noa
 	order by a.pno,a.tablea,a.noa,a.gno;
