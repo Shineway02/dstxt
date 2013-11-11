@@ -154,15 +154,19 @@ z_tran_ds09:--z_tran_ds09
 	declare @fixa float
 	declare @tire float
 	declare @item float
+	declare @other float
 	declare @curfixa float
 	declare @curtire float
 	declare @curitem float
+	declare @curother float
 	declare @carfixa float
 	declare @cartire float
 	declare @caritem float
+	declare @carother float
 	declare @difffixa float
 	declare @difftire float
 	declare @diffitem float
+	declare @diffother float
 	
 	declare @oil float
 	declare @etc float
@@ -250,6 +254,7 @@ z_tran_ds09:--z_tran_ds09
 		fixa float,
 		tire float,
 		item float, 	
+		other float,
 		profit float
 	)
 	set @cmd = 
@@ -533,27 +538,29 @@ z_tran_ds09:--z_tran_ds09
 		fixa float,
 		tire float,
 		item float,
+		other float,
 		carfixa float,
 		cartire float,
-		caritem float
+		caritem float,
+		carother float
 	)
-	insert into @tmp03(mon,carno,driverno,fixa,tire,item)
-	select mon,carno,driverno,round(SUM(fixa),0),round(SUM(tire),0),round(SUM(item),0)
+	insert into @tmp03(mon,carno,driverno,fixa,tire,item,other)
+	select mon,carno,driverno,round(SUM(fixa),0),round(SUM(tire),0),round(SUM(item),0),round(SUM(other),0)
 	from(
 		select LEFT(a.fixadate,6) mon,isnull(a.carno,'') carno,isnull(a.driverno,'') driverno
-		,SUM(ISNULL(a.wmoney,0)) fixa,SUM(ISNULL(a.cmoney,0)) tire,SUM(ISNULL(a.dmoney,0)) item
+		,SUM(ISNULL(a.wmoney,0)) fixa,SUM(ISNULL(a.cmoney,0)) tire,SUM(ISNULL(a.dmoney,0)) item,SUM(ISNULL(a.emoney,0)) other
 		from fixa a
 		where left(a.fixadate,6) between left(@t_btrandate,6) and left(@t_etrandate,6)
 		group by LEFT(a.fixadate,6),isnull(a.carno,''),isnull(a.driverno,'')
 		union all
 		select LEFT(a.outdate,6),isnull(a.carno,''),isnull(a.driverno,'')
-		,SUM(ISNULL(a.wmoney,0)) fixa,SUM(ISNULL(a.cmoney,0)) tire,SUM(ISNULL(a.dmoney,0)) item
+		,SUM(ISNULL(a.wmoney,0)) fixa,SUM(ISNULL(a.cmoney,0)) tire,SUM(ISNULL(a.dmoney,0)) item,SUM(ISNULL(a.emoney,0)) other
 		from fixout a
 		where left(a.outdate,6) between left(@t_btrandate,6) and left(@t_etrandate,6)
 		group by LEFT(a.outdate,6),isnull(a.carno,''),isnull(a.driverno,'')
 		union all
 		select LEFT(a.datea,6),isnull(a.carno,''),isnull(a.driverno,'')
-		,SUM(ISNULL(a.wmoney,0)) fixa,SUM(ISNULL(a.cmoney,0)) tire,SUM(ISNULL(a.dmoney,0)) item
+		,SUM(ISNULL(a.wmoney,0)) fixa,SUM(ISNULL(a.cmoney,0)) tire,SUM(ISNULL(a.dmoney,0)) item,SUM(ISNULL(a.emoney,0)) other
 		from tire a
 		where left(a.datea,6) between left(@t_btrandate,6) and left(@t_etrandate,6)
 		group by LEFT(a.datea,6),isnull(a.carno,''),isnull(a.driverno,'')
@@ -576,21 +583,23 @@ z_tran_ds09:--z_tran_ds09
 	set fixa = case when ISNULL(c.total,0)=0 then 0 else round(isnull(a.total,0)*ISNULL(b.fixa,0)/ISNULL(c.total,0),0)end
 		,tire = case when ISNULL(c.total,0)=0 then 0 else round(isnull(a.total,0)*ISNULL(b.tire,0)/ISNULL(c.total,0),0)end
 		,item = case when ISNULL(c.total,0)=0 then 0 else round(isnull(a.total,0)*ISNULL(b.item,0)/ISNULL(c.total,0),0)end
+		,other = case when ISNULL(c.total,0)=0 then 0 else round(isnull(a.total,0)*ISNULL(b.other,0)/ISNULL(c.total,0),0)end
 	from #z_tmp_ds a
 	inner join @tmp03 b on left(a.trandate,6)=b.mon and a.carno=b.carno and a.driverno=b.driverno 
 	inner join @tmp03_a c on left(a.trandate,6)=c.mon and a.carno=c.carno and a.driverno=c.driverno 
 	--檢查有維修、輪胎、材料,但當月無收金額的
-	insert into #z_tmp_ds(carteamno,custno,trandate,carno,driverno,driver,fixa,tire,item,addr)
-	select 'zzzzz##','zzzzz##',a.mon,a.carno,a.driverno,c.namea,a.fixa,a.tire,a.item,'當月無出車'
+	insert into #z_tmp_ds(carteamno,custno,trandate,carno,driverno,driver,fixa,tire,item,other,addr)
+	select 'zzzzz##','zzzzz##',a.mon,a.carno,a.driverno,c.namea,a.fixa,a.tire,a.item,a.other,'當月無出車'
 	from @tmp03 a
 	left join @tmp03_a b on a.mon=b.mon and a.carno=b.carno and a.driverno=b.driverno
 	left join driver c on a.driverno=c.noa
-	where isnull(b.total,0)=0 and (isnull(a.fixa,0)!=0 or isnull(a.tire,0)!=0 or isnull(a.item,0)!=0)
+	where isnull(b.total,0)=0 and (isnull(a.fixa,0)!=0 or isnull(a.tire,0)!=0 or isnull(a.item,0)!=0 or isnull(a.other,0)!=0)
 	----修正誤差,由收入最高的依序補回一次補1,LOOP
 	update @tmp03
 	set carfixa = ISNULL(b.fixa,0)
 		,cartire = ISNULL(b.tire,0)
 		,caritem = ISNULL(b.item,0)
+		,carother = ISNULL(b.other,0)
 	from @tmp03 a
 	inner join (select LEFT(ISNULL(trandate,''),6) mon
 		,ISNULL(carno,'') carno
@@ -598,6 +607,7 @@ z_tran_ds09:--z_tran_ds09
 		,SUM(ISNULL(fixa,0)) fixa
 		,SUM(ISNULL(tire,0)) tire
 		,SUM(ISNULL(item,0)) item
+		,SUM(ISNULL(other,0)) other
 		from #z_tmp_ds 
 		group by LEFT(ISNULL(trandate,''),6),ISNULL(carno,''),ISNULL(driverno,'')) b 
 		on a.mon=b.mon and a.carno=b.carno and a.driverno=b.driverno
@@ -612,27 +622,28 @@ z_tran_ds09:--z_tran_ds09
 		trannoq nvarchar(10),
 		fixa float,
 		tire float,
-		item float
+		item float,
+		other float
 		UNIQUE (recno,carno,driverno,mon)
 	)
-	insert into @ztmp03(recno,carno,driverno,mon,tranno,trannoq,fixa,tire,item)
+	insert into @ztmp03(recno,carno,driverno,mon,tranno,trannoq,fixa,tire,item,other)
 	select ROW_NUMBER()over(partition by isnull(carno,''),isnull(driverno,''),LEFT(isnull(trandate,''),6) order by isnull(total,0) desc,tranno,trannoq) 
-	,isnull(carno,''),isnull(driverno,''),LEFT(isnull(trandate,''),6),tranno,trannoq,isnull(fixa,0),isnull(tire,0),isnull(item,0)
+	,isnull(carno,''),isnull(driverno,''),LEFT(isnull(trandate,''),6),tranno,trannoq,isnull(fixa,0),isnull(tire,0),isnull(item,0),isnull(other,0)
 	from #z_tmp_ds
 	
 	declare cursor_table cursor for
-	select mon,carno,driverno,carfixa-fixa,cartire-tire,caritem-item from @tmp03 
+	select mon,carno,driverno,carfixa-fixa,cartire-tire,caritem-item,carother-other from @tmp03 
 	open cursor_table
 	fetch next from cursor_table
-	into @mon,@carno,@driverno,@fixa,@tire,@item
+	into @mon,@carno,@driverno,@fixa,@tire,@item,@other
 	while(@@FETCH_STATUS <> -1)
 	begin		
-		select @n = 1,@curfixa=@fixa,@curtire=@tire,@curitem=@item
-		while(@curfixa!=0 or @curtire!=0 or @curitem!=0)
+		select @n = 1,@curfixa=@fixa,@curtire=@tire,@curitem=@item,@curother=@other
+		while(@curfixa!=0 or @curtire!=0 or @curitem!=0 or @curother!=0)
 		begin		
 			if not exists(select tranno from @ztmp03 where carno=@carno and driverno=@driverno and mon=@mon and recno=@n)
 			begin
-				if((@curfixa=@fixa and @fixa!=0) or (@curtire=@tire and @tire!=0) or (@curitem=@item and @item!=0))
+				if((@curfixa=@fixa and @fixa!=0) or (@curtire=@tire and @tire!=0) or (@curitem=@item and @item!=0) or (@curother=@other and @other!=0))
 				begin
 					--避免LOOP
 					select '資料異常 @ztmp03 01',@carno,@driverno,@mon,@n
@@ -641,14 +652,14 @@ z_tran_ds09:--z_tran_ds09
 				end
 				set @n = 1
 			end
-			select @tranno=tranno,@trannoq=trannoq,@carfixa=fixa,@cartire=tire,@caritem=item
+			select @tranno=tranno,@trannoq=trannoq,@carfixa=fixa,@cartire=tire,@caritem=item,@carother=other
 			from @ztmp03 where carno=@carno and driverno=@driverno and mon=@mon and recno=@n
 			if(@tranno is null)
 			begin
 				select '資料異常 @ztmp03 02',@carno,@driverno,@mon,@n
 				return
 			end
-			select @difffixa=0,@difftire=0,@diffitem=0
+			select @difffixa=0,@difftire=0,@diffitem=0,@diffother=0
 			if(@carfixa!=0)
 			begin
 				set @difffixa = case when @curfixa>0 then -1 when @curfixa<0 then 1 else 0 end
@@ -664,16 +675,21 @@ z_tran_ds09:--z_tran_ds09
 				set @diffitem = case when @curitem>0 then -1 when @curitem<0 then 1 else 0 end
 				set @curitem = @curitem + @diffitem
 			end
-				
+			if(@carother!=0)
+			begin
+				set @diffother = case when @curother>0 then -1 when @curother<0 then 1 else 0 end
+				set @curother = @curother + @diffother
+			end	
 			update #z_tmp_ds set fixa=isnull(fixa,0)+@difffixa
 			,tire=isnull(tire,0)+@difftire
 			,item=isnull(item,0)+@diffitem
+			,other=isnull(other,0)+@diffother
 			where tranno=@tranno and trannoq=@trannoq
 			
 			set @n = @n + 1
 		end
 		fetch next from cursor_table
-		into @mon,@carno,@driverno,@fixa,@tire,@item
+		into @mon,@carno,@driverno,@fixa,@tire,@item,@other
 	end
 	close cursor_table
 	deallocate cursor_table
@@ -805,7 +821,7 @@ z_tran_ds09:--z_tran_ds09
 	----------------------------------------------------------------------------------------------
 	update #z_tmp_ds set profit = isnull(total,0)-isnull(total2,0)-isnull(reserve,0)-isnull(tolls,0)
 		+isnull(custplus,0)-isnull(custminus,0)-isnull(carplus,0)+isnull(carminus,0)-isnull(oil,0)-isnull(etc,0)
-		-isnull(fixa,0)-isnull(tire,0)-isnull(item,0)
+		-isnull(fixa,0)-isnull(tire,0)-isnull(item,0)-isnull(other,0)
 	
 	delete #z_tmp_ds
 	from #z_tmp_ds a
@@ -863,6 +879,7 @@ z_tran_ds09:--z_tran_ds09
 		fixa float,
 		tire float,
 		item float,
+		other float,
 		profit float,
 		miles float
 	)
@@ -898,6 +915,7 @@ z_tran_ds09:--z_tran_ds09
 			,@oil=sum(isnull(oil,0)),@etc=sum(isnull(etc,0))
 			,@fixa=sum(isnull(fixa,0)),@tire=sum(isnull(tire,0))
 			,@item=sum(isnull(item,0))
+			,@other=sum(isnull(other,0))
 			,@profit=sum(isnull(profit,0))
 			,@miles=sum(isnull(miles,0))
 		from #z_tmp_ds where cardealno=@cardealno
@@ -913,10 +931,10 @@ z_tran_ds09:--z_tran_ds09
 			end		
 			insert into @tmp(page,nn,gno,cardealno,cardeal
 				,total,total2,reserve,tolls,custplus,custminus,carplus,carminus
-				,oil,etc,fixa,tire,item,profit,miles)
+				,oil,etc,fixa,tire,item,other,profit,miles)
 			select @page,@curline%@rowline,@gno,@cardealno,@cardeal
 				,@total,@total2,@reserve,@tolls,@custplus,@custminus,@carplus,@carminus
-				,@oil,@etc,@fixa,@tire,@item,@profit,@miles
+				,@oil,@etc,@fixa,@tire,@item,@other,@profit,@miles
 			set @curline = @curline + 1
 			--是否換頁
 			if(@curline%@rowline=0)
@@ -946,10 +964,10 @@ z_tran_ds09:--z_tran_ds09
 			
 			insert into @tmp(page,nn,gno,cardealno,cardeal
 				,total,total2,reserve,tolls,custplus,custminus,carplus,carminus
-				,oil,etc,fixa,tire,item,profit,miles)
+				,oil,etc,fixa,tire,item,other,profit,miles)
 			select @page,@curline%@rowline,@gno,@cardealno,@cardeal
 				,@total,@total2,@reserve,@tolls,@custplus,@custminus,@carplus,@carminus
-				,@oil,@etc,@fixa,@tire,@item,@profit,@miles
+				,@oil,@etc,@fixa,@tire,@item,@other,@profit,@miles
 			set @curline = @curline + 1
 			--是否換頁
 			if(@curline%@rowline=0)
@@ -961,13 +979,13 @@ z_tran_ds09:--z_tran_ds09
 			set @recno = 1
 			declare cursor_table2 cursor for
 			select total,total2,reserve,tolls,custplus,custminus,carplus,carminus,oil,etc
-				,fixa,tire,item,profit,trandate,carno,driver,addrno,addr,miles
+				,fixa,tire,item,other,profit,trandate,carno,driver,addrno,addr,miles
 			from #z_tmp_ds where cardealno=@cardealno
 			order by trandate,carno,driver
 			open cursor_table2
 			fetch next from cursor_table2
 			into @total,@total2,@reserve,@tolls,@custplus,@custminus,@carplus,@carminus,@oil,@etc
-				,@fixa,@tire,@item,@profit,@trandate,@carno,@driver,@addrno,@addr,@miles
+				,@fixa,@tire,@item,@other,@profit,@trandate,@carno,@driver,@addrno,@addr,@miles
 			while(@@FETCH_STATUS <> -1)
 			begin
 				set @n = @n + 1
@@ -992,10 +1010,10 @@ z_tran_ds09:--z_tran_ds09
 					select @gno = case when @profit<=0 then '7' else '6' end
 				insert into @tmp(page,nn,gno,recno,cardealno,cardeal
 					,total,total2,reserve,tolls,custplus,custminus,carplus,carminus,oil,etc
-					,fixa,tire,item,profit,trandate,carno,driver,addrno,addr,miles)
+					,fixa,tire,item,other,profit,trandate,carno,driver,addrno,addr,miles)
 				select @page,@curline%@rowline,@gno,@recno,@cardealno,@cardeal
 					,@total,@total2,@reserve,@tolls,@custplus,@custminus,@carplus,@carminus,@oil,@etc
-					,@fixa,@tire,@item,@profit,@trandate,@carno,@driver,@addrno,@addr,@miles
+					,@fixa,@tire,@item,@other,@profit,@trandate,@carno,@driver,@addrno,@addr,@miles
 				set @curline = @curline + 1
 				--是否換頁
 				if(@curline%@rowline=0)
@@ -1005,7 +1023,7 @@ z_tran_ds09:--z_tran_ds09
 				set @recno = @recno +1
 				fetch next from cursor_table2
 				into @total,@total2,@reserve,@tolls,@custplus,@custminus,@carplus,@carminus,@oil,@etc
-				,@fixa,@tire,@item,@profit,@trandate,@carno,@driver,@addrno,@addr,@miles
+				,@fixa,@tire,@item,@other,@profit,@trandate,@carno,@driver,@addrno,@addr,@miles
 			end
 			close cursor_table2
 			deallocate cursor_table2
@@ -1024,15 +1042,16 @@ z_tran_ds09:--z_tran_ds09
 		,@oil=sum(isnull(oil,0)),@etc=sum(isnull(etc,0))
 		,@fixa=sum(isnull(fixa,0)),@tire=sum(isnull(tire,0))
 		,@item=sum(isnull(item,0))
+		,@other=sum(isnull(other,0))
 		,@profit=sum(isnull(profit,0))
 		,@miles=sum(isnull(miles,0))
 	from #z_tmp_ds
 	insert into @tmp(page,nn,gno,cardealno
 		,total,total2,reserve,tolls,custplus,custminus,carplus,carminus
-		,oil,etc,fixa,tire,item,profit,miles)
+		,oil,etc,fixa,tire,item,other,profit,miles)
 	select @page,@curline%@rowline,'10',CHAR(255)
 		,@total,@total2,@reserve,@tolls,@custplus,@custminus,@carplus,@carminus
-		,@oil,@etc,@fixa,@tire,@item,@profit,@miles
+		,@oil,@etc,@fixa,@tire,@item,@other,@profit,@miles
 				
 	select a.* 
 	,a.cardeal g00
@@ -1055,6 +1074,7 @@ z_tran_ds09:--z_tran_ds09
 	,a.carno g17
 	,a.driver g18
 	,a.addr g19
+	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,a.other),1)),4,12)) g20
 	from @tmp a
 	order by a.cardealno,page,nn;
 
