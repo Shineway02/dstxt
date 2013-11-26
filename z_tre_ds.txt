@@ -641,7 +641,7 @@ z_tre_ds04:--z_tre_ds04  ref z_tre_ds02
 	declare @page int
 	declare @recno int
 	declare @curline int -- 當前行數
-	set @rowline = 15
+	set @rowline = 16
 	set @endline = 2
 	set @page = 0
 	
@@ -1059,7 +1059,7 @@ z_tre_ds03:--z_tre_ds03  ref z_tre_ds01
 	declare @page int
 	declare @recno int
 	declare @curline int -- 當前行數
-	set @rowline = 15
+	set @rowline = 16
 	set @endline = 2
 	set @page = 0
 	
