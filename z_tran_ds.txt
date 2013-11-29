@@ -424,6 +424,8 @@ z_tran_ds09:--z_tran_ds09
 	--有付款廠商的就判斷為代收、代付
 	where len(isnull(a.tggno,''))=0
 	and left(a.datea,6) between left(@t_btrandate,6) and left(@t_etrandate,6)
+	--借支排除
+	and charindex('借支',a.minusitem)=0
 	group by LEFT(a.datea,6),isnull(a.carno,''),isnull(a.driverno,'')
 	--發金額合計
 	declare @tmp02_a table(
@@ -1503,6 +1505,8 @@ z_tran_ds08:--z_tran_ds08
 	--有付款廠商的就判斷為代收、代付
 	where len(isnull(a.tggno,''))=0
 	and left(a.datea,6) between left(@t_btrandate,6) and left(@t_etrandate,6)
+	--借支排除
+	and charindex('借支',a.minusitem)=0
 	group by LEFT(a.datea,6),isnull(a.carno,''),isnull(a.driverno,'')
 	--發金額合計
 	declare @tmp02_a table(
