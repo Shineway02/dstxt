@@ -367,9 +367,23 @@ z_tran_ds09:--z_tran_ds09
 			begin
 				if((@curplus=@plus and @plus!=0) or (@curminus=@minus and @minus!=0))
 				begin
-					--避免LOOP
+					--找第一筆
+					if exists(select tranno from @ztmp01 where custno=@custno and @mon=mon and recno=1)
+					begin
+						select @tranno=tranno,@trannoq=trannoq,@custplus=custplus,@custminus=custminus 
+						from @ztmp01 where custno=@custno and @mon=mon and recno=1
+						
+						update #z_tmp_ds set custplus=isnull(custplus,0)-@custplus
+						,custminus=isnull(custminus,0)-@custminus
+						where tranno=@tranno and trannoq=@trannoq
+						break
+					end
+					else
+					begin
+					----避免LOOP
 					select '資料異常 @ztmp01 01',@custno,@mon,@n
 					return
+					end
 				return
 				end
 				set @n = 1
@@ -1448,9 +1462,23 @@ z_tran_ds08:--z_tran_ds08
 			begin
 				if((@curplus=@plus and @plus!=0) or (@curminus=@minus and @minus!=0))
 				begin
-					--避免LOOP
+					--找第一筆
+					if exists(select tranno from @ztmp01 where custno=@custno and @mon=mon and recno=1)
+					begin
+						select @tranno=tranno,@trannoq=trannoq,@custplus=custplus,@custminus=custminus 
+						from @ztmp01 where custno=@custno and @mon=mon and recno=1
+						
+						update #z_tmp_ds set custplus=isnull(custplus,0)-@custplus
+						,custminus=isnull(custminus,0)-@custminus
+						where tranno=@tranno and trannoq=@trannoq
+						break
+					end
+					else
+					begin
+					----避免LOOP
 					select '資料異常 @ztmp01 01',@custno,@mon,@n
 					return
+					end
 				return
 				end
 				set @n = 1
