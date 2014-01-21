@@ -218,18 +218,18 @@ z_fixa_ds01:--z_fixa_ds01
 	-------------------------------------------------------------------------------------------
 	if(charindex('detail',@detail01)>0)
 	begin
-		insert into @tmp(gno,pno,tablea,noa,productno,product,mount,price,[money])
-				select '2','1','fixa',a.noa,a.productno,a.product,a.mount,a.price,a.[money] 
+		insert into @tmp(gno,pno,tablea,noa,productno,product,mount,price,[money],memos)
+				select '2','1','fixa',a.noa,a.productno,a.product,a.mount,a.price,a.[money],a.memo 
 				from fixas a 
 				left join @tmp b on b.tablea='fixa' and a.noa=b.noa
 				where (b.noa is not null) and ISNULL(a.[money],0)>=@limit	
-		insert into @tmp(gno,pno,tablea,noa,productno,product,mount,price,[money])
-				select '2','2','fixin',a.noa,a.productno,a.product,a.mount,a.price,a.[money] 
+		insert into @tmp(gno,pno,tablea,noa,productno,product,mount,price,[money],memos)
+				select '2','2','fixin',a.noa,a.productno,a.product,a.mount,a.price,a.[money] ,a.memo
 				from fixins a 
 				left join @tmp b on b.tablea='fixin' and a.noa=b.noa
 				where (b.noa is not null) and ISNULL(a.[money],0)>=@limit	
-		insert into @tmp(gno,pno,tablea,noa,productno,product,mount,price,[money])
-				select '2','3','fixout',a.noa,a.productno,a.product,a.mount,a.price,a.[money] 
+		insert into @tmp(gno,pno,tablea,noa,productno,product,mount,price,[money],memos)
+				select '2','3','fixout',a.noa,a.productno,a.product,a.mount,a.price,a.[money],a.memo
 				from fixouts a 
 				left join @tmp b on b.tablea='fixout' and a.noa=b.noa
 				where (b.noa is not null) and ISNULL(a.[money],0)>=@limit	
