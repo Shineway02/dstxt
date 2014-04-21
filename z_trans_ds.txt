@@ -1,31 +1,20 @@
 z_trans_ds01:-- z_trans_ds01
 	SET QUOTED_IDENTIFIER OFF
 	declare @cmd nvarchar(max)
-	declare @t_accy nvarchar(10)
-	declare @t_bdate nvarchar(10)
-	declare @t_edate nvarchar(10)
-	declare @t_btrandate nvarchar(10)
-	declare @t_etrandate nvarchar(10)
-	declare @t_carno nvarchar(max)
-	declare @t_tggno nvarchar(max)
-	declare @t_cardealno nvarchar(max)
-	declare @t_carteam nvarchar(max)
-	declare @t_calctype nvarchar(max)
-	declare @t_bcustno nvarchar(20)
-	declare @t_ecustno nvarchar(20)
-	
-	set @t_accy = '[1]'
-	set @t_bdate = case when '#non'=[2] then '' else [2] end
-	set @t_edate = case when '#non'=[3] then char(255) else [3] end
-	set @t_btrandate = case when '#non'=[4] then '' else [4] end
-	set @t_etrandate = case when '#non'=[5] then char(255) else [5] end
-	set @t_carno = case when '#non'=[6] then '' else [6] end
-	set @t_tggno = case when '#non'=[7] then '' else [7] end
-	set @t_cardealno = case when '#non'=[8] then '' else [8] end
-	set @t_carteam = case when '#non'=[9] then '' else [9] end
-	set @t_calctype = case when '#non'=[10] then '' else [10] end
-	set @t_bcustno = case when '#non'=[11] then '' else [11] end
-	set @t_ecustno = case when '#non'=[12] then char(255) else [12] end
+	declare @t_accy nvarchar(10) = '[1]'
+	declare @t_bdate nvarchar(10) = case when '#non'=[2] then '' else [2] end
+	declare @t_edate nvarchar(10) = case when '#non'=[3] then char(255) else [3] end
+	declare @t_btrandate nvarchar(10) = case when '#non'=[4] then '' else [4] end
+	declare @t_etrandate nvarchar(10) = case when '#non'=[5] then char(255) else [5] end
+	declare @t_carno nvarchar(max) = case when '#non'=[6] then '' else [6] end
+	declare @t_tggno nvarchar(max) = case when '#non'=[7] then '' else [7] end
+	declare @t_cardealno nvarchar(max) = case when '#non'=[8] then '' else [8] end
+	declare @t_carteam nvarchar(max) = case when '#non'=[9] then '' else [9] end
+	declare @t_calctype nvarchar(max) = case when '#non'=[10] then '' else [10] end
+	declare @t_bcustno nvarchar(20) = case when '#non'=[11] then '' else [11] end
+	declare @t_ecustno nvarchar(20) = case when '#non'=[12] then char(255) else [12] end
+	declare @t_baddrno nvarchar(20) = case when '#non'=[13] then '' else [13] end
+	declare @t_eaddrno nvarchar(20) = case when '#non'=[14] then char(255) else [14] end
     -------------------------------------------------------------------------------------------
     declare @string nvarchar(max)
 	declare @n int
@@ -176,15 +165,16 @@ z_trans_ds01:-- z_trans_ds01
 		tggno nvarchar(20),
 		tgg nvarchar(40),
 		cardealno nvarchar(20),
-		cardeal nvarchar(40)
+		cardeal nvarchar(40),
+		mount3 decimal(10,0)
 	)
 	
 	insert into @tmp(noa,datea,trandate,carno,driverno,driver,addrno,addr,productno,product,custno,cust
-		,price,mount,total,price2,price3,mount2,discount,total2,tggno,tgg,cardealno,cardeal)
+		,price,mount,total,price2,price3,mount2,discount,total2,tggno,tgg,cardealno,cardeal,mount3)
 	select a.noa,a.datea,a.trandate,a.carno,a.driverno,a.driver,a.straddrno,a.straddr,a.uccno,a.product,a.custno,b.nick
 		,a.price,a.mount,a.total
 		,a.price2,a.price3,a.mount2,a.discount,a.total2
-		,a.tggno,c.nick,a.cardealno,d.nick
+		,a.tggno,c.nick,a.cardealno,d.nick,isnull(a.mount3,0)
 	from view_trans a
 	left join cust b on a.custno=b.noa
 	left join tgg c on a.tggno=c.noa
@@ -193,6 +183,7 @@ z_trans_ds01:-- z_trans_ds01
 	left join #calctype f on a.calctype = f.noa
     where a.datea between @t_bdate and @t_edate
     and a.trandate between @t_btrandate and @t_etrandate
+    and a.straddrno between @t_baddrno and @t_eaddrno
     and isnull(a.custno,'') between @t_bcustno and @t_ecustno
 	and (not exists(select * from #carno) or exists(select * from #carno where noa=a.carno))
 	and (not exists(select * from #tggno) or exists(select * from #tggno where noa=a.tggno))
@@ -200,8 +191,8 @@ z_trans_ds01:-- z_trans_ds01
 	and e.noa is not null
 	and f.noa is not null
 	---------------------------------------------------------------------------------------------------------
-	insert into @tmp(trandate,mount,total,mount2,total2)
-	select CHAR(255),SUM(ISNULL(mount,0)),SUM(ISNULL(total,0)),SUM(ISNULL(mount2,0)),SUM(ISNULL(total2,0)) from @tmp
+	insert into @tmp(trandate,mount,total,mount2,total2,mount3)
+	select CHAR(255),SUM(ISNULL(mount,0)),SUM(ISNULL(total,0)),SUM(ISNULL(mount2,0)),SUM(ISNULL(total2,0)),SUM(ISNULL(mount3,0)) from @tmp
 	
 	select case when trandate=char(255) then '1' else '0' end gno
 	,ROW_NUMBER()over(order by trandate,carno) rr
@@ -213,4 +204,5 @@ z_trans_ds01:-- z_trans_ds01
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(mount2)),1)),4,12))+'.'+RIGHT(CAST(mount2 as nvarchar),3) mt2
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total2),1)),4,12)) tot2
 	,* 
+	,mount3 mm3
 	from @tmp order by trandate,carno;
