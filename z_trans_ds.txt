@@ -188,7 +188,7 @@ z_trans_ds01:-- z_trans_ds01
 	and (not exists(select * from #carno) or exists(select * from #carno where noa=a.carno))
 	and (not exists(select * from #tggno) or exists(select * from #tggno where noa=a.tggno))
 	and (not exists(select * from #cardealno) or exists(select * from #cardealno where noa=a.cardealno))
-	and e.noa is not null
+	and (len(@t_carteam)=0 or e.noa is not null)
 	and f.noa is not null
 	---------------------------------------------------------------------------------------------------------
 	insert into @tmp(trandate,mount,total,mount2,total2,mount3)
