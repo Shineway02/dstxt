@@ -171,7 +171,6 @@ z_tran_ds11a:--z_tran_ds11a
 	--22
 	declare @t_detail nvarchar(max) = case when '#non'=[29] then '' else [29] end
 	--------------------------------------------------------------------------------
-	declare @t_pageline int = 30  --一頁的行數
 	declare @tmp table(
 		gno nvarchar(10),
 		pno nvarchar(10),
@@ -253,11 +252,11 @@ z_tran_ds11a:--z_tran_ds11a
 	insert into @tmp(gno,pno,carkindno,carkind,miles,oilmount,insures,money1,money2
 		,custplus,custminus,driverplus,driverminus,reserve,tolls,etc,oil
 		,wmoney,wmoneycar,wmoneyplate,cmoney,dmoney,emoney,ticket,bonus,tax,depreciation,driverpay)
-	select '2','2',carkindno,carkind,SUM(ISNULL(miles,0)),SUM(isnull(oilmount,0)),sum(insures),SUM(money1),SUM(money2)
+	select '2','2',CHAR(255),CHAR(255),SUM(ISNULL(miles,0)),SUM(isnull(oilmount,0)),sum(insures),SUM(money1),SUM(money2)
 		,SUM(custplus),SUM(custminus),SUM(driverplus),SUM(driverminus),SUM(reserve),SUM(tolls),SUM(etc),SUM(oil)
 		,SUM(wmoney),SUM(wmoneycar),SUM(wmoneyplate),SUM(cmoney),SUM(dmoney),SUM(emoney),SUM(ticket),SUM(bonus),SUM(tax),SUM(depreciation)
 		,sum(driverpay)
-	from @tmp where pno='1' group by carkindno,carkind
+	from @tmp where pno='1'
 
 	update @tmp set oilrate=case when money1!=0 then oil/money1*100 else 0 end
 		,kl = case when oilmount!=0 then miles/oilmount else 0 end
@@ -302,30 +301,6 @@ z_tran_ds11a:--z_tran_ds11a
 		order by a.trandate
 	end
 	----------------------------------------------------------------------------------------------------
-	declare @n int
-	declare @carkindno nvarchar(20)
-	declare @carkind nvarchar(20)
-	
-	declare cursor_table cursor for
-	select carkindno,carkind,count(1) from @tmp group by carkindno,carkind
-	open cursor_table
-	fetch next from cursor_table
-	into @carkindno,@carkind,@n
-	while(@@FETCH_STATUS <> -1)
-	begin		
-		while @n%@t_pageline !=0
-		begin
-			insert into @tmp(gno,pno,rno,carkindno,carkind)
-			values('3','3',CHAR(255),@carkindno,@carkind)
-			set @n=@n+1
-		end
-		
-		fetch next from cursor_table
-		into @carkindno,@carkind,@n
-	end
-	close cursor_table
-	deallocate cursor_table
-	
 	select *
 	,caryear m01
 	,cast(round(oilrate,0) as nvarchar)+'%' m02
