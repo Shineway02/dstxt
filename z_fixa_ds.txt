@@ -11,7 +11,11 @@ z_fixa_ds05:--z_fixa_ds05
 	
 	select '1' gno,b.fixadate
 	,a.productno ppno
-	,a.* 
+	,'<a style="font-family: Times New Roman,標楷體, serif'+char(59)+'">'+a.product+'</a>' product
+	,a.unit
+	,a.mount
+	,a.price
+	,a.memo
 	from fixas a
 	left join fixa b on a.noa=b.noa 
 	where b.fixadate between @t_bdate and @t_edate
