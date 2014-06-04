@@ -140,6 +140,7 @@ z_trans_ds01:-- z_trans_ds01
 	end
 	-------------------------------------------------------------------------------------------
 	declare @tmp table(
+		accy nvarchar(10),
 		noa nvarchar(20),
 		datea nvarchar(10),
 		trandate nvarchar(10),
@@ -169,9 +170,9 @@ z_trans_ds01:-- z_trans_ds01
 		mount3 decimal(10,0)
 	)
 	
-	insert into @tmp(noa,datea,trandate,carno,driverno,driver,addrno,addr,productno,product,custno,cust
+	insert into @tmp(accy,noa,datea,trandate,carno,driverno,driver,addrno,addr,productno,product,custno,cust
 		,price,mount,total,price2,price3,mount2,discount,total2,tggno,tgg,cardealno,cardeal,mount3)
-	select a.noa,a.datea,a.trandate,a.carno,a.driverno,a.driver,a.straddrno,a.straddr,a.uccno,a.product,a.custno,b.nick
+	select a.accy,a.noa,a.datea,a.trandate,a.carno,a.driverno,a.driver,a.straddrno,a.straddr,a.uccno,a.product,a.custno,b.nick
 		,a.price,a.mount,a.total
 		,a.price2,a.price3,a.mount2,a.discount,a.total2
 		,a.tggno,c.nick,a.cardealno,d.nick,isnull(a.mount3,0)
@@ -194,7 +195,8 @@ z_trans_ds01:-- z_trans_ds01
 	insert into @tmp(trandate,mount,total,mount2,total2,mount3)
 	select CHAR(255),SUM(ISNULL(mount,0)),SUM(ISNULL(total,0)),SUM(ISNULL(mount2,0)),SUM(ISNULL(total2,0)),SUM(ISNULL(mount3,0)) from @tmp
 	
-	select case when trandate=char(255) then '1' else '0' end gno
+	select "trans_ds?noa=\'"+noa+"\' and "+cast(ROW_NUMBER()over(order by trandate,carno) as nvarchar)+"=$rr?"+accy qhref
+	,case when trandate=char(255) then '1' else '0' end gno
 	,ROW_NUMBER()over(order by trandate,carno) rr
 	,case when isnull(price,0)=0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price)),1)),4,12))+'.'+RIGHT(CAST(price as nvarchar),3) end pp1
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(mount)),1)),4,12))+'.'+RIGHT(CAST(mount as nvarchar),3) mt1
