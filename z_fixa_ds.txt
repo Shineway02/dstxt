@@ -25,18 +25,23 @@ z_fixa_ds05:--z_fixa_ds05
 	order by a.productno,b.fixadate;
 
 z_fixa_ds02:--z_fixa_ds02
+	--------------------------------------------------------------------------------------
 	SET QUOTED_IDENTIFIER OFF
 	declare @cmd nvarchar(max)
-	declare @t_bno nvarchar(20)= case when '#non'=[11] then '' else [11] end
-	declare @t_eno nvarchar(20)= case when '#non'=[12] then CHAR(255) else [12] end
+	declare @t_bnoa nvarchar(20)= case when '#non'=[11] then '' else [11] end
+	declare @t_enoa nvarchar(20)= case when '#non'=[12] then CHAR(255) else [12] end
+	declare @t_product nvarchar(max) = case when '#non'=[13] then '' else [13] end
 	declare @t_btggno nvarchar(20) = case when '#non'=[5] then '' else [5] end
 	declare @t_etggno nvarchar(20) = case when '#non'=[6] then CHAR(255) else [6] end
 	--------------------------------------------------------------------------------------
-	select '1' gno,ROW_NUMBER()over(order by noa) rr 
+	select '1' gno
+		,ROW_NUMBER()over(order by noa) rr 
+		,"fixucc_ds?noa=\'"+noa+"\' and "+cast(ROW_NUMBER()over(order by noa) as nvarchar)+"=$rr?" ghref
 		,noa,namea,unit,typea,tggno,tgg comp
 	from fixucc
-	where noa between @t_bno and @t_eno
+	where noa between @t_bnoa and @t_enoa
 	and isnull(tggno,'') between @t_btggno and @t_etggno
+	and (len(@t_product)=0 or CHARINDEX(@t_product,namea)>0)
 	order by noa;
 
 
