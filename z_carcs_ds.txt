@@ -1,23 +1,14 @@
 z_carcs_ds01:-- z_carcs_ds01 carcsa
 	SET QUOTED_IDENTIFIER OFF
 	declare @cmd nvarchar(max)
-	declare @t_accy nvarchar(10)
-	declare @t_bdate nvarchar(10)
-	declare @t_edate nvarchar(10)
-	declare @t_btrandate nvarchar(10)
-	declare @t_etrandate nvarchar(10)
-	declare @t_carno nvarchar(max)
-	declare @t_tggno nvarchar(max)
-	declare @t_cardealno nvarchar(max)
-	
-	set @t_accy = '[1]'
-	set @t_bdate = case when '#non'=[2] then '' else [2] end
-	set @t_edate = case when '#non'=[3] then char(255) else [3] end
-	set @t_btrandate = case when '#non'=[4] then '' else [4] end
-	set @t_etrandate = case when '#non'=[5] then char(255) else [5] end
-	set @t_carno = case when '#non'=[6] then '' else [6] end
-	set @t_tggno = case when '#non'=[7] then '' else [7] end
-	set @t_cardealno = case when '#non'=[8] then '' else [8] end
+	declare @t_accy nvarchar(10) = '[1]'
+	declare @t_bdate nvarchar(10) = case when '#non'=[2] then '' else [2] end
+	declare @t_edate nvarchar(10) = case when '#non'=[3] then char(255) else [3] end
+	declare @t_btrandate nvarchar(10) = case when '#non'=[4] then '' else [4] end
+	declare @t_etrandate nvarchar(10) = case when '#non'=[5] then char(255) else [5] end
+	declare @t_carno nvarchar(max) = case when '#non'=[6] then '' else [6] end
+	declare @t_tggno nvarchar(max) = case when '#non'=[7] then '' else [7] end
+	declare @t_cardealno nvarchar(max) = case when '#non'=[8] then '' else [8] end
     -------------------------------------------------------------------------------------------
     declare @string nvarchar(max)
 	declare @n int
@@ -147,6 +138,7 @@ z_carcs_ds01:-- z_carcs_ds01 carcsa
 	select CHAR(255),SUM(ISNULL(mount,0)),SUM(ISNULL(total,0)),SUM(ISNULL(mount2,0)),SUM(ISNULL(total2,0)) from @tmp
 	
 	select case when trandate=char(255) then '1' else '0' end gno
+	,"carcsa_ds?noa=\'"+noa+"\' and "+cast(ROW_NUMBER()over(order by trandate,carno) as nvarchar)+"=$rr?" qhref
 	,ROW_NUMBER()over(order by trandate,carno) rr
 	,case when isnull(price,0)=0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price)),1)),4,12)) end pp1
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(mount)),1)),4,12))+'.'+RIGHT(CAST(mount as nvarchar),3) mt1
@@ -161,23 +153,14 @@ z_carcs_ds01:-- z_carcs_ds01 carcsa
 z_carcs_ds02:-- z_carcs_ds02 carcsb
 	SET QUOTED_IDENTIFIER OFF
 	declare @cmd nvarchar(max)
-	declare @t_accy nvarchar(10)
-	declare @t_bdate nvarchar(10)
-	declare @t_edate nvarchar(10)
-	declare @t_btrandate nvarchar(10)
-	declare @t_etrandate nvarchar(10)
-	declare @t_carno nvarchar(max)
-	declare @t_tggno nvarchar(max)
-	declare @t_cardealno nvarchar(max)
-	
-	set @t_accy = '[1]'
-	set @t_bdate = case when '#non'=[2] then '' else [2] end
-	set @t_edate = case when '#non'=[3] then char(255) else [3] end
-	set @t_btrandate = case when '#non'=[4] then '' else [4] end
-	set @t_etrandate = case when '#non'=[5] then char(255) else [5] end
-	set @t_carno = case when '#non'=[6] then '' else [6] end
-	set @t_tggno = case when '#non'=[7] then '' else [7] end
-	set @t_cardealno = case when '#non'=[8] then '' else [8] end
+	declare @t_accy nvarchar(10) = '[1]'
+	declare @t_bdate nvarchar(10) = case when '#non'=[2] then '' else [2] end
+	declare @t_edate nvarchar(10) = case when '#non'=[3] then char(255) else [3] end
+	declare @t_btrandate nvarchar(10) = case when '#non'=[4] then '' else [4] end
+	declare @t_etrandate nvarchar(10) = case when '#non'=[5] then char(255) else [5] end
+	declare @t_carno nvarchar(max) = case when '#non'=[6] then '' else [6] end
+	declare @t_tggno nvarchar(max) = case when '#non'=[7] then '' else [7] end
+	declare @t_cardealno nvarchar(max) = case when '#non'=[8] then '' else [8] end
     -------------------------------------------------------------------------------------------
     declare @string nvarchar(max)
 	declare @n int
@@ -306,6 +289,7 @@ z_carcs_ds02:-- z_carcs_ds02 carcsb
 	select CHAR(255),SUM(ISNULL(mount,0)),SUM(ISNULL(total,0)),SUM(ISNULL(mount2,0)),SUM(ISNULL(total2,0)) from @tmp
 	
 	select case when trandate=char(255) then '1' else '0' end gno
+	,"carcsb_ds?noa=\'"+noa+"\' and "+cast(ROW_NUMBER()over(order by trandate,carno) as nvarchar)+"=$rr?" qhref
 	,ROW_NUMBER()over(order by trandate,carno) rr
 	,case when isnull(price,0)=0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price)),1)),4,12)) end pp1
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(mount)),1)),4,12))+'.'+RIGHT(CAST(mount as nvarchar),3) mt1
@@ -465,6 +449,7 @@ z_carcs_ds03:-- z_carcs_ds03 carcsc
 	select CHAR(255),SUM(ISNULL(mount,0)),SUM(ISNULL(total,0)),SUM(ISNULL(mount2,0)),SUM(ISNULL(total2,0)) from @tmp
 	
 	select case when trandate=char(255) then '1' else '0' end gno
+	,"carcsc_ds?noa=\'"+noa+"\' and "+cast(ROW_NUMBER()over(order by trandate,carno) as nvarchar)+"=$rr?" qhref
 	,ROW_NUMBER()over(order by trandate,carno) rr
 	,case when isnull(price,0)=0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price)),1)),4,12)) end pp1
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(mount)),1)),4,12))+'.'+RIGHT(CAST(mount as nvarchar),3) mt1
