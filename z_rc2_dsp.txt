@@ -47,6 +47,7 @@ z_rc2_dsp01:--z_rc2_dsp01
 	left join view_rc2s a on a.accy=b.accy and a.noa=b.noa
 	left join tgg c on b.tggno=c.noa
 	where b.datea between @t_bdate and @t_edate
+	and b.noa between @t_bnoa and @t_enoa
 	and ISNULL(b.tggno,'') between @t_btggno and @t_etggno
 	--and ISNULL(a.productno,'') between @t_bproductno and @t_eproductno
 	------------------------------------------------------------------------------------
