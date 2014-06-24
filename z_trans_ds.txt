@@ -12,6 +12,8 @@ z_trans_ds02:-- z_trans_ds02
 	declare @tmp table(
 		gno nvarchar(10),
 		recno int,
+		accy nvarchar(10),
+		noa nvarchar(20),
 		carno nvarchar(20),
 		driverno nvarchar(20),
 		driver nvarchar(40),
@@ -30,10 +32,10 @@ z_trans_ds02:-- z_trans_ds02
 		overh float,--抽成
 		total2 float
 	)
-	insert into @tmp(gno,recno,carno,driverno,driver,trandate,straddrno,straddr
+	insert into @tmp(gno,recno,accy,noa,carno,driverno,driver,trandate,straddrno,straddr
 		,outmount,pton2,mount2,price2,price3,tot1,overw,overh,total2)
 	select '1',ROW_NUMBER()over(partition by ISNULL(a.carno,''),ISNULL(a.driverno,'') order by a.trandate,a.noa) 
-		,ISNULL(a.carno,''),ISNULL(a.driverno,''),ISNULL(a.driver,''),ISNULL(a.trandate,'')
+		,a.accy,a.noa,ISNULL(a.carno,''),ISNULL(a.driverno,''),ISNULL(a.driver,''),ISNULL(a.trandate,'')
 		,a.straddrno,a.straddr,a.outmount,a.pton2,a.mount2,a.price2,a.price3
 		,ROUND(isnull(mount2,0)*(isnull(price2,0)+isnull(price3,0)),0)
 		,isnull(overw,0),isnull(overh,0),total2
@@ -78,6 +80,7 @@ z_trans_ds02:-- z_trans_ds02
 	
 	select * 
 		,recno rr
+		,"trans_ds?noa=\'"+noa+"\' and "+cast(recno as nvarchar)+"=$rr?"+accy ghref
 		,trandate a01
 		,straddr a02
 		,mount2 a03
