@@ -1,3 +1,96 @@
+z_trans_ds02:-- z_trans_ds02
+	SET QUOTED_IDENTIFIER OFF 
+	declare @cmd nvarchar(max) 
+	declare @t_bdate nvarchar(10) = case when '#non'=[2] then '' else [2] end
+	declare @t_edate nvarchar(10) = case when '#non'=[3] then char(255) else [3] end
+	declare @t_btrandate nvarchar(10) = case when '#non'=[4] then '' else [4] end
+	declare @t_etrandate nvarchar(10) = case when '#non'=[5] then char(255) else [5] end
+	declare @t_bdriverno nvarchar(20) = case when '#non'=[15] then '' else [15] end
+	declare @t_edriverno nvarchar(20) = case when '#non'=[16] then char(255) else [16] end
+	declare @t_carno nvarchar(max) = case when '#non'=[6] then '' else [6] end
+	------------------------------------------------------------------------------------
+	declare @tmp table(
+		gno nvarchar(10),
+		recno int,
+		carno nvarchar(20),
+		driverno nvarchar(20),
+		driver nvarchar(40),
+		trandate nvarchar(10),
+		straddrno nvarchar(20),
+		straddr nvarchar(50),
+		outmount float,
+		pton2 float,
+		mount2 float,
+		price2 float,
+		price3 float,
+		tot1 float,
+		overw float,--扣％
+		tot2 float,
+		tot3 float,
+		overh float,--抽成
+		total2 float
+	)
+	insert into @tmp(gno,recno,carno,driverno,driver,trandate,straddrno,straddr
+		,outmount,pton2,mount2,price2,price3,tot1,overw,overh,total2)
+	select '1',ROW_NUMBER()over(partition by ISNULL(a.carno,''),ISNULL(a.driverno,'') order by a.trandate,a.noa) 
+		,ISNULL(a.carno,''),ISNULL(a.driverno,''),ISNULL(a.driver,''),ISNULL(a.trandate,'')
+		,a.straddrno,a.straddr,a.outmount,a.pton2,a.mount2,a.price2,a.price3
+		,ROUND(isnull(mount2,0)*(isnull(price2,0)+isnull(price3,0)),0)
+		,isnull(overw,0),isnull(overh,0),total2
+	from view_trans a
+	where isnull(a.datea,'') between @t_bdate and @t_edate
+	and isnull(a.trandate,'') between @t_btrandate and @t_etrandate 
+	and ISNULL(a.driverno,'') between @t_bdriverno and @t_edriverno
+	and (len(@t_carno)=0 or CHARINDEX(','+a.carno+',',','+@t_carno+',')>0)
+	----------------------------------------------------------------------------------
+	update @tmp set tot2 = round(tot1*overw/100,0)
+	update @tmp set tot3 = tot1 - tot2 
+	
+	insert into @tmp(gno,carno,driverno,outmount,pton2,mount2,tot1,tot2,tot3,total2)
+	select '2',carno,driverno,SUM(ISNULL(outmount,0)),SUM(ISNULL(pton2,0)),SUM(ISNULL(mount2,0))
+		,SUM(ISNULL(tot1,0)),SUM(ISNULL(tot2,0)),SUM(ISNULL(tot3,0)),SUM(ISNULL(total2,0))
+	from @tmp
+	where gno='1'
+	group by carno,driverno
+	----------------------------------------------------------------------------------
+	declare @t_n int = 45 --一頁45行
+	declare @carno nvarchar(20)
+	declare @driverno nvarchar(20)
+	declare @n int
+	
+	declare cursor_table cursor for
+	select carno,driverno,COUNT(1) from @tmp group by carno,driverno
+	open cursor_table
+	fetch next from cursor_table
+	into @carno,@driverno,@n
+	while(@@FETCH_STATUS <> -1)
+	begin
+		while @n%@t_n !=0
+		begin
+			insert into @tmp(gno,carno,driverno)values('3',@carno,@driverno)
+			set @n = @n + 1
+		end
+		fetch next from cursor_table
+		into @carno,@driverno,@n
+	end
+	close cursor_table
+	deallocate cursor_table	
+	
+	select * 
+		,recno rr
+		,trandate a01
+		,straddr a02
+		,mount2 a03
+		,ISNULL(price2,0)+ISNULL(price3,0) a04
+		,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,tot1),1)),4,12)) a05
+		,case when overw!=0 then cast(cast(overw as int) as nvarchar)+'%' else '' end a06
+		,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,tot2),1)),4,12)) a07
+		,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,tot3),1)),4,12)) a08
+		,case when overh!=0 then cast(cast(overh as int) as nvarchar)+'%' else '' end a09
+		,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total2),1)),4,12)) a10
+	from @tmp 
+	order by carno,driverno,gno,recno;
+
 z_trans_ds01:-- z_trans_ds01
 	SET QUOTED_IDENTIFIER OFF
 	declare @cmd nvarchar(max)
