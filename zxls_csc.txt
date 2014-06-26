@@ -78,7 +78,7 @@ zxls_csc:--zxls_csc
 					,inmount,inprice,inmoney
 					,outmount,outprice,discount,outmoney
 					,tgg,cardeal,memo)
-					values(@count,@a,@b,@c,@d,@e,@f,@g,@h,@i
+					values(@count,@a,@b,@c,@d,@e,@f,@g,replace(@h,' ',''),@i
 					,cast(replace(@j,',','') as float)
 					,cast(replace(@k,',','') as float)/1000,cast(replace(@l,',','') as float)
 					,round(cast(replace(@k,',','') as float)/1000*cast(replace(@l,',','') as float),0)
