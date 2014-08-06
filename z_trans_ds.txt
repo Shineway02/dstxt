@@ -179,4 +179,4 @@ z_trans_ds01:-- z_trans_ds01
 	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total2),1)),4,12)) tot2
 	,* 
 	,mount3 mm3
-	from @tmp order by trandate,carno;
+	from @tmp order by trandate,noa;
