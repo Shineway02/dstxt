@@ -141,15 +141,16 @@ z_trans_ds01:-- z_trans_ds01
 		tgg nvarchar(40),
 		cardealno nvarchar(20),
 		cardeal nvarchar(40),
-		mount3 decimal(10,0)
+		mount3 decimal(10,0),
+		memo nvarchar(max)
 	)
 	
 	insert into @tmp(accy,noa,datea,trandate,carno,driverno,driver,addrno,addr,productno,product,custno,cust
-		,price,mount,custdiscount,total,price2,price3,mount2,discount,total2,tggno,tgg,cardealno,cardeal,mount3)
+		,price,mount,custdiscount,total,price2,price3,mount2,discount,total2,tggno,tgg,cardealno,cardeal,mount3,memo)
 	select a.accy,a.noa,a.datea,a.trandate,a.carno,a.driverno,a.driver,a.straddrno,a.straddr,a.uccno,a.product,a.custno,b.nick
 		,a.price,a.mount,a.custdiscount,a.total
 		,a.price2,a.price3,a.mount2,a.discount,a.total2
-		,a.tggno,c.nick,a.cardealno,d.nick,isnull(a.mount3,0)
+		,a.tggno,c.nick,a.cardealno,d.nick,isnull(a.mount3,0),a.memo
 	from view_trans a
 	left join cust b on a.custno=b.noa
 	left join tgg c on a.tggno=c.noa
