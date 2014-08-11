@@ -1,3 +1,114 @@
+z_trans_ds03:-- z_trans_ds03
+	SET QUOTED_IDENTIFIER OFF 
+	declare @cmd nvarchar(max) 
+	declare @t_bdate nvarchar(10) = case when '#non'=[2] then '' else [2] end
+	declare @t_edate nvarchar(10) = case when '#non'=[3] then char(255) else [3] end
+	declare @t_btrandate nvarchar(10) = case when '#non'=[4] then '' else [4] end
+	declare @t_etrandate nvarchar(10) = case when '#non'=[5] then char(255) else [5] end
+	declare @t_bcustno nvarchar(20) = case when '#non'=[11] then '' else [11] end
+	declare @t_ecustno nvarchar(20) = case when '#non'=[12] then char(255) else [12] end
+	declare @t_cno nvarchar(20) 
+	select top 1 @t_cno = noa from acomp order by noa
+	------------------------------------------------------------------------------------
+	declare @tmp table(
+		gno nvarchar(10),
+		pno nvarchar(10),
+		recno int,
+		accy nvarchar(10),
+		noa nvarchar(20),
+		custno nvarchar(20),
+		comp nvarchar(50),
+		addr nvarchar(max),
+		serial nvarchar(20),
+		tel nvarchar(max),
+		fax nvarchar(max),
+		
+		cno nvarchar(20),
+		acomp nvarchar(50),
+		aaddr nvarchar(max),
+		atel nvarchar(max),
+		afax nvarchar(max),
+		
+		trandate nvarchar(10),
+		carno nvarchar(20),
+		straddr nvarchar(50),
+		product nvarchar(50),
+		mount float,
+		price float,
+		custdiscount float,
+		total float,
+		memo nvarchar(max)
+	)
+	insert into @tmp(gno,pno,recno,accy,noa,custno,trandate,carno,straddr,product,mount,price,custdiscount,total,memo)
+	select '1','1',ROW_NUMBER()over(partition by isnull(a.custno,'') order by a.trandate,a.noa)
+		,a.accy,a.noa,a.custno,a.trandate,a.carno,a.straddr,a.product,a.mount,a.price,a.custdiscount
+		,a.total,a.memo
+	from view_trans a
+	where a.trandate between @t_btrandate and @t_etrandate
+	and a.datea between @t_bdate and @t_edate
+	and a.custno between @t_bcustno and @t_ecustno
+	----------------------------------------------------------------------------------------------
+	insert into @tmp(gno,pno,custno,mount,total)
+	select '3','3',custno,SUM(isnull(mount,0)),SUM(isnull(total,0))
+	from @tmp
+	group by custno
+	----------------------------------------------------------------------------------------------
+	declare @t_page int = 35 --一頁幾行
+	declare @custno nvarchar(20)
+	declare @n int
+	
+	declare cursor_table cursor for 
+	select custno,count(1)
+	from @tmp
+	group by custno 
+	open cursor_table 
+	fetch next from cursor_table 
+	into @custno,@n
+	while(@@FETCH_STATUS <> -1) 
+	begin 
+		while @n%@t_page !=0
+		begin
+			insert into @tmp(custno,gno,pno)values(@custno,'2','2')
+			set @n=@n+1
+		end
+		fetch next from cursor_table 
+		into @custno,@n
+	end 
+	close cursor_table 
+	deallocate cursor_table 
+	----------------------------------------------------------------------------------------------
+	update @tmp set comp=b.comp,addr=b.addr_comp,serial=b.serial
+		,tel=b.tel,fax=b.fax
+	from @tmp a
+	left join cust b on a.custno=b.noa
+	
+	update @tmp set cno=@t_cno,acomp=b.acomp,atel=b.tel,afax=b.fax
+	from @tmp a
+	left join acomp b on @t_cno = b.noa 
+	 
+	select "trans_ds?noa=\'"+noa+"\' and "+cast(recno as nvarchar)+"=$rr?"+accy ghref 
+	,recno rr
+	,trandate a01
+	,carno a02
+	,'<a style="font-family:'+ "'Times New Roman','標楷體', serif"+char(59)+'">'+straddr+'</a>' a03
+	,'<a style="font-family:'+ "'Times New Roman','標楷體', serif"+char(59)+'">'+product+'</a>' a04
+	,dbo.getComma( mount,3) a05
+	,dbo.getComma( price,2) a06
+	,dbo.getComma(custdiscount,0) a07
+	,dbo.getComma(total,0) a08
+	,'<a style="font-family:'+ "'Times New Roman','標楷體', serif"+char(59)+'">'+memo+'</a>' a09 
+	,'<a style="font-family:'+ "'Times New Roman','標楷體', serif"+char(59)+'">'+comp+'</a>' b01
+	,'<a style="font-family:'+ "'Times New Roman','標楷體', serif"+char(59)+'">'+addr+'</a>' b02
+	,'<a style="font-family:'+ "'Times New Roman','標楷體', serif"+char(59)+'">'+serial+'</a>' b03
+	,'<a style="font-family:'+ "'Times New Roman','標楷體', serif"+char(59)+'">'+custno+'</a>' b04
+	,'<a style="font-family:'+ "'Times New Roman','標楷體', serif"+char(59)+'">'+tel+'</a>' b05
+	,'<a style="font-family:'+ "'Times New Roman','標楷體', serif"+char(59)+'">'+fax+'</a>' b06
+	,'<a style="font-family:'+ "'Times New Roman','標楷體', serif"+char(59)+'">'+acomp+'</a>' c01
+	,'<a style="font-family:'+ "'Times New Roman','標楷體', serif"+char(59)+'">'+comp+'</a>' c02
+	,* 
+	from @tmp
+	order by custno,pno,recno;
+
 z_trans_ds02:-- z_trans_ds02
 	SET QUOTED_IDENTIFIER OFF 
 	declare @cmd nvarchar(max) 
@@ -30,15 +141,16 @@ z_trans_ds02:-- z_trans_ds02
 		tot2 float,
 		tot3 float,
 		overh float,--抽成
-		total2 float
+		total2 float,
+		sender	nvarchar(max)--司機備註
 	)
 	insert into @tmp(gno,recno,accy,noa,carno,driverno,driver,trandate,straddrno,straddr
-		,outmount,pton2,mount2,price2,price3,tot1,overw,overh,total2)
+		,outmount,pton2,mount2,price2,price3,tot1,overw,overh,total2,sender)
 	select '1',ROW_NUMBER()over(partition by ISNULL(a.carno,''),ISNULL(a.driverno,'') order by a.trandate,a.noa) 
 		,a.accy,a.noa,ISNULL(a.carno,''),ISNULL(a.driverno,''),ISNULL(a.driver,''),ISNULL(a.trandate,'')
 		,a.straddrno,a.straddr,a.outmount,a.pton2,a.mount2,a.price2,a.price3
 		,ROUND(isnull(mount2,0)*(isnull(price2,0)+isnull(price3,0)),0)
-		,isnull(overw,0),isnull(overh,0),total2
+		,isnull(overw,0),isnull(overh,0),total2,a.sender
 	from view_trans a
 	where isnull(a.datea,'') between @t_bdate and @t_edate
 	and isnull(a.trandate,'') between @t_btrandate and @t_etrandate 
