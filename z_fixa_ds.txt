@@ -231,11 +231,14 @@ z_fixa_ds05:--z_fixa_ds05
 	declare @t_etggno nvarchar(20) = case when '#non'=[6] then CHAR(255) else [6] end
 	declare @t_bdate nvarchar(20) =  case when '#non'=[3] then '' else [3] end
 	declare @t_edate nvarchar(20) =  case when '#non'=[4] then CHAR(255) else [4] end
+	declare @t_carno nvarchar(20) =  case when '#non'=[7] then '' else [7] end
 	declare @t_bproductno nvarchar(20) = case when '#non'=[11] then '' else [11] end
 	declare @t_eproductno nvarchar(20) = case when '#non'=[12] then CHAR(255) else [12] end
 	declare @t_product nvarchar(max) = case when '#non'=[13] then '' else [13] end
 	
 	select '1' gno,b.fixadate
+	,b.carno ccno
+	,b.cardno cdno
 	,a.productno ppno
 	,'<a style="font-family: Times New Roman,標楷體, serif'+char(59)+'">'+a.product+'</a>' product
 	,a.unit
@@ -248,6 +251,7 @@ z_fixa_ds05:--z_fixa_ds05
 	and a.productno between @t_bproductno and @t_eproductno
 	and b.tggno between @t_btggno and @t_etggno
 	and (len(@t_product)=0 or CHARINDEX(@t_product,a.product)>0)
+	and (len(@t_carno)=0 or b.carno=@t_carno)
 	order by a.productno,b.fixadate;
 
 z_fixa_ds02:--z_fixa_ds02
