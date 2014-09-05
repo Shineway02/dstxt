@@ -283,13 +283,13 @@ z_trans_ds01:-- z_trans_ds01
 	select "trans_ds?noa=\'"+noa+"\' and "+cast(ROW_NUMBER()over(order by trandate,carno) as nvarchar)+"=$rr?"+accy qhref
 	,case when trandate=char(255) then '1' else '0' end gno
 	,ROW_NUMBER()over(order by trandate,noa) rr
-	,case when isnull(price,0)=0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price)),1)),4,12))+'.'+RIGHT(CAST(price as nvarchar),3) end pp1
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(mount)),1)),4,12))+'.'+RIGHT(CAST(mount as nvarchar),3) mt1
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total),1)),4,12)) tot1
-	,case when isnull(price2,0)=0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price2)),1)),4,12))+'.'+RIGHT(CAST(price2 as nvarchar),3) end pp2
-	,case when isnull(price3,0)=0 then '' else reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price3)),1)),4,12))+'.'+RIGHT(CAST(price3 as nvarchar),3) end pp3
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(mount2)),1)),4,12))+'.'+RIGHT(CAST(mount2 as nvarchar),3) mt2
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total2),1)),4,12)) tot2
+	,case when isnull(price,0)=0 then '' else dbo.getComma(price,3) end pp1
+	,dbo.getComma(mount,3) mt1
+	,dbo.getComma(total,0) tot1
+	,case when isnull(price,0)=0 then '' else dbo.getComma(price,3) end  pp2
+	,case when isnull(price,0)=0 then '' else dbo.getComma(price,3) end  pp3
+	,dbo.getComma(mount2,3) mt2
+	,dbo.getComma(total2,0) tot2
 	,* 
 	,mount3 mm3
 	from @tmp order by trandate,noa;
