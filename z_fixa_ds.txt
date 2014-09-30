@@ -219,6 +219,7 @@ z_fixa_ds06:--z_fixa_ds06  (FIXA,FIXIN)全算、(FIXOUT)只算工資費用、(TI
 		,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,a.[tax]),1)),4,12)) b05
 		,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,a.[discount]),1)),4,12)) b06
 		,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,a.[total]),1)),4,12)) b07
+		,'<a style="font-family:'+ "'Times New Roman','標楷體', serif"+char(59)+'">'+a.memo+'</a>' a08
 		,a.* 
 	from @tmp a
 	left join tgg b on a.tggno=b.noa
