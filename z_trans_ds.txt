@@ -286,8 +286,8 @@ z_trans_ds01:-- z_trans_ds01
 	,case when isnull(price,0)=0 then '' else dbo.getComma(price,3) end pp1
 	,dbo.getComma(mount,3) mt1
 	,dbo.getComma(total,0) tot1
-	,case when isnull(price,0)=0 then '' else dbo.getComma(price,3) end  pp2
-	,case when isnull(price,0)=0 then '' else dbo.getComma(price,3) end  pp3
+	,case when isnull(price,0)=0 then '' else dbo.getComma(price2,3) end  pp2
+	,case when isnull(price,0)=0 then '' else dbo.getComma(price3,3) end  pp3
 	,dbo.getComma(mount2,3) mt2
 	,dbo.getComma(total2,0) tot2
 	,* 
