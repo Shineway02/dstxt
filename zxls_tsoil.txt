@@ -50,8 +50,8 @@ zxls_tsoil:--zxls_tsoil
 	declare @money float
 	declare @discount float
 	declare @total float
-	declare @driverno float
-	declare @driver float
+	declare @driverno nvarchar(20)
+	declare @driver nvarchar(20)
 	
 	declare @oilstationno nvarchar(20)=''
 	declare @oilstation nvarchar(20)=''
@@ -85,7 +85,7 @@ zxls_tsoil:--zxls_tsoil
 				set @discount = CAST(@m as float)
 				set @total = CAST(@n as float)
 				select @driverno='',@driver=''
-				select top 1 @driverno=driverno,@driver=driver from view_trans103 where trandate=@datea
+				select top 1 @driverno=driverno,@driver=driver from view_trans where trandate=@datea and carno=@carno
 
 				insert into @tmp(datea,timea,carno,miles,product,price,mount,[money],discount,total
 					,oilstationno,oilstation,driverno,driver)
