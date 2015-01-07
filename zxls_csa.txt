@@ -192,12 +192,12 @@ zxls_csa:--zxls_csa
 	deallocate cursor_table
 	
 	insert into carcsa(worker,noa,datea,trandate,mon,interval,ordeno,cartype,price
-	,custno,comp,nick,addrno,addr,uccno,product,memo,[weight],mount,inmoney,outmoney,tggno,tgg,cardealno,cardeal)
+	,custno,comp,nick,addrno,addr,uccno,product,memo,[weight],mount,inmoney,outmoney,tggno,tgg,cardealno,cardeal,qtime)
 	select @worker,a.noa,a.datea,a.trandate,a.mon
 	,case when a.interval='中' then '2' when a.interval='下' then '3' else '1' end
 	,a.ordeno,a.cartype,a.price
 	,a.custno,b.comp,b.nick,a.addrno,c.addr,a.uccno,d.product,a.memo,a.[weight],a.mount,a.inmoney,a.outmoney
-	,e.noa,e.comp,f.noa,f.acomp
+	,e.noa,e.comp,f.noa,f.acomp,convert(nvarchar,getDate(),120)
 	from @tmp a
 	left join cust b on a.custno=b.noa
 	left join addr c on a.addrno=c.noa

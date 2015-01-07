@@ -143,13 +143,13 @@ zxls_csc_ds:--zxls_csc_ds
 
 	insert into carcsc (worker,noa,datea,trandate,mon,carno,driverno,driver,addrno,addr
 	,calctype,discount,[weight],inprice,inmount,inmoney,outprice,outmount,outmoney
-	,boatno,custno,comp,nick,uccno,product,tggno,tgg,cardealno,cardeal,memo)
+	,boatno,custno,comp,nick,uccno,product,tggno,tgg,cardealno,cardeal,memo,qtime)
 	select @worker,a.noa,a.datea,a.trandate,a.mon
 	,a.carno,b.driverno,c.namea,a.straddrno,d.addr
 	,a.calctype,a.discount,a.[weight] 
 	,a.inprice,a.inmount,a.inmoney,a.outprice,a.outmount,a.outmoney
 	,a.shipno,a.custno,e.comp,e.nick,a.uccno,f.product
-	,g.noa,g.comp,h.noa,h.acomp,a.memo
+	,g.noa,g.comp,h.noa,h.acomp,a.memo,convert(nvarchar,getDate(),120)
 	from @tmp a
 	left join car2 b on a.carno=b.carno
 	left join driver c on b.driverno=c.noa	
