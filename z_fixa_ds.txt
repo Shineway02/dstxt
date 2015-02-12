@@ -415,7 +415,6 @@ z_fixa_ds01:--z_fixa_ds01
 	declare @t_etggno nvarchar(20) = case when '#non'=[6] then CHAR(255) else [6] end
 	declare @t_carno nvarchar(20) = case when '#non'=[7] then '' else [7] end
 	declare @limit float
-	declare @detail01 nvarchar(max)
 	declare @option01 nvarchar(max) = case when '#non'=[9] then '' else [9] end
 
 	BEGIN TRY
@@ -457,36 +456,35 @@ z_fixa_ds01:--z_fixa_ds01
 		etireno nvarchar(40),
 		memos nvarchar(max)
 	)
-	
 	insert into @tmp(gno,pno,tablea,noa,datea,tggno,tgg,carno,cardno,wmoney,cmoney,dmoney,emoney,tax,discount,total)
 	select '1','1','fixa',a.noa,a.fixadate,a.tggno,a.tgg,a.carno,a.cardno,a.wmoney,a.cmoney,a.dmoney,a.emoney,a.tax,a.discount,a.total
 	from fixa a 
-	where charindex('fixa',@detail01)>0
-		and a.fixadate between @t_bdate and @t_edate
-		and (a.tggno between @t_btggno and @t_etggno)
+	where charindex('fixa',@option01)>0
+		and isnull(a.fixadate,'') between @t_bdate and @t_edate
+		and (isnull(a.tggno,'') between @t_btggno and @t_etggno)
 		and (len(@t_carno)=0 or a.carno=@t_carno)
 	union all
 	select '1','2','fixin',a.noa,a.indate,a.tggno,a.tgg,'' carno,'' cardno,a.wmoney,a.cmoney,a.dmoney,a.emoney,a.tax,a.discount,a.total
 	from fixin a 
-	where charindex('fixin',@detail01)>0
+	where charindex('fixin',@option01)>0
 		and a.indate between @t_bdate and @t_edate
 		and (a.tggno between @t_btggno and @t_etggno)
 	union all
 	select '1','3','fixout',a.noa,a.outdate,'' tggno,'' tgg,a.carno,a.cardno,a.wmoney,a.cmoney,a.dmoney,a.emoney,0,0,a.[money]
 	from fixout a 
-	where charindex('fixout',@detail01)>0
+	where charindex('fixout',@option01)>0
 		and a.outdate between @t_bdate and @t_edate
 		and (len(@t_carno)=0 or a.carno=@t_carno)
 	union all
 	select '1','3','tire',a.noa,a.datea,a.tggno,a.tgg,a.carno,a.cardno,a.wmoney,a.cmoney,a.dmoney,a.emoney,0,0,ISNULL(a.wmoney,0)+ISNULL(a.cmoney,0)+ISNULL(a.dmoney,0)
 	from tire a 
-	where charindex('tire',@detail01)>0
+	where charindex('tire',@option01)>0
 		and a.datea between @t_bdate and @t_edate
 		and (a.tggno between @t_btggno and @t_etggno)
 		and (len(@t_carno)=0 or a.carno=@t_carno)
 
 	-------------------------------------------------------------------------------------------
-	if(charindex('detail',@detail01)>0)
+	if(charindex('detail',@option01)>0)
 	begin
 		insert into @tmp(gno,pno,tablea,noa,productno,product,mount,price,[money],memos)
 				select '2','1','fixa',a.noa,a.productno,a.product,a.mount,a.price,a.[money],a.memo 
@@ -511,7 +509,7 @@ z_fixa_ds01:--z_fixa_ds01
 				and len(a.etireno)>0
 	end
 	--fixa
-	if(charindex('fixa',@detail01)>0)
+	if(charindex('fixa',@option01)>0)
 	begin
 		insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,emoney,tax,discount,total)
 		select '3','5','維修',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0)),SUM(ISNULL(emoney,0))
@@ -519,7 +517,7 @@ z_fixa_ds01:--z_fixa_ds01
 		from @tmp where gno='1' and tablea='fixa'
 	end
 	--fixin
-	if(charindex('fixin',@detail01)>0)
+	if(charindex('fixin',@option01)>0)
 	begin
 		insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,emoney,tax,discount,total)
 		select '3','6','進貨',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0)),SUM(ISNULL(dmoney,0))
@@ -527,7 +525,7 @@ z_fixa_ds01:--z_fixa_ds01
 		from @tmp where gno='1' and tablea='fixin'
 	end
 	--fixout
-	if(charindex('fixout',@detail01)>0)
+	if(charindex('fixout',@option01)>0)
 	begin
 		insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,emoney,tax,discount,total)
 		select '3','7','領料',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0)),SUM(ISNULL(dmoney,0))
@@ -535,7 +533,7 @@ z_fixa_ds01:--z_fixa_ds01
 		from @tmp where gno='1' and tablea='fixout'
 	end
 	--tire
-	if(charindex('tire',@detail01)>0)
+	if(charindex('tire',@option01)>0)
 	begin
 		insert into @tmp(gno,pno,noa,wmoney,cmoney,dmoney,emoney,tax,discount,total)
 		select '3','8','換補',SUM(ISNULL(wmoney,0)),SUM(ISNULL(cmoney,0)),SUM(ISNULL(dmoney,0)),SUM(ISNULL(dmoney,0))
@@ -582,16 +580,16 @@ z_fixa_ds01:--z_fixa_ds01
 	
 	select a.* 
 	,b.nick nick
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,wmoney),1)),4,12)) wm
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,dmoney),1)),4,12)) dm
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,cmoney),1)),4,12)) cm
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,emoney),1)),4,12)) em
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,tax),1)),4,12)) tt
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,discount),1)),4,12)) dis
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,total),1)),4,12)) tot
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(mount)),1)),4,12))+'.'+RIGHT(CAST(mount as nvarchar),3) mt
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(price)),1)),4,12))+'.'+RIGHT(CAST(price as nvarchar),3) pe
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,[money]),1)),4,12)) my
+	,dbo.getComma(wmoney,0) wm
+	,dbo.getComma(dmoney,0) dm
+	,dbo.getComma(cmoney,0) cm
+	,dbo.getComma(emoney,0) em
+	,dbo.getComma(tax,0) tt
+	,dbo.getComma(discount,0) dis
+	,dbo.getComma(total,0) tot
+	,dbo.getComma(mount,3) mt
+	,dbo.getComma(price,3) pe
+	,dbo.getComma([money],0) my
 	,tablea+'_ds?left(noa,'+cast(len(a.noa) as nvarchar)+')=$noa?' qhref
 	from @tmp a
 	left join tgg b on a.tggno=b.noa
