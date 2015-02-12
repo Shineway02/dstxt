@@ -396,13 +396,40 @@ z_fixa_ds03:--z_fixa_ds03
 	declare @t_accy nvarchar(10)
 	declare @t_name nvarchar(20)
 	
-	select '0' gno
+	declare @tmp table(
+		gno nvarchar(10),
+		rr int,
+		typea nvarchar(20),
+		ctype nvarchar(20),
+		noa nvarchar(20),
+		datea nvarchar(10),
+		carno nvarchar(20),
+		carplateno nvarchar(20),
+		position nvarchar(20),
+		productno nvarchar(20),
+		product nvarchar(40),
+		brandno nvarchar(20),
+		brand nvarchar(40),
+		price float
+	)
+	
+	insert into @tmp(gno,rr,typea,ctype,noa,datea,carno,carplateno,position
+		,productno,product,brandno,brand,price)
+	select '1' gno
 	,ROW_NUMBER()over(order by brand,noa) rr
-	,* 
-	,productno po
-	,product pt
-	,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,price),1)),4,12)) pe
-	from view_tirestk order by brand,noa;
+	,typea,ctype,noa,datea,carno,carplateno,position
+	,productno,product,brandno,brand,price
+	from view_tirestk order by brand,noa
+	
+	insert into @tmp(gno,price)
+	select '2',SUM(ISNULL(price,0)) from @tmp
+	 
+	select * 
+		,productno po
+		,product pt
+		,dbo.getComma(price,0) pe
+	from @tmp 
+	order by gno,rr;
 
 z_fixa_ds01:--z_fixa_ds01
 	SET QUOTED_IDENTIFIER OFF
