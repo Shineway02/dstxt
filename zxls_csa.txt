@@ -196,7 +196,9 @@ zxls_csa:--zxls_csa
 	select @worker,a.noa,a.datea,a.trandate,a.mon
 	,case when a.interval='中' then '2' when a.interval='下' then '3' else '1' end
 	,a.ordeno,a.cartype,a.price
-	,a.custno,b.comp,b.nick,a.addrno,c.addr,a.uccno,d.product,a.memo,a.[weight],a.mount,a.inmoney,a.outmoney
+	,a.custno,b.comp,b.nick,a.addrno,c.addr
+	,a.uccno,isnull(d.product,'')+LEFT(ISNULL(a.ordeno,''),4)
+	,a.memo,a.[weight],a.mount,a.inmoney,a.outmoney
 	,e.noa,e.comp,f.noa,f.acomp,convert(nvarchar,getDate(),120)
 	from @tmp a
 	left join cust b on a.custno=b.noa
