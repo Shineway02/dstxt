@@ -856,10 +856,10 @@ z_paytran_ds3:--z_paytran_ds3
 	--------------------------------------------------------------------
 	
 	declare cursor_table cursor for
-	select driverno,carno from #z_paytran_ds3 group  by  driverno,carno
+	select driver,carno from #z_paytran_ds3 group  by  driver,carno
 	open cursor_table
 	fetch next from cursor_table
-	into @driverno,@carno
+	into @driver,@carno
 	while(@@FETCH_STATUS <> -1)
 	begin
 		select @checkno=''
@@ -867,29 +867,29 @@ z_paytran_ds3:--z_paytran_ds3
 		select top 1 @checkno=a.checkno
 		from view_tre a
 		where charindex(','+a.carteamno+',',','+@t_carteamno+',')>0
-		and a.driverno=@driverno and carno=@carno 
+		and a.driver=@driver and carno=@carno 
 		and (a.datea between @t_bdate and @t_edate) 
 		and len(isnull(a.checkno,''))>0
 		 
-		update #z_paytran_ds3 set checkno=@checkno where driverno=@driverno and carno=@carno
+		update #z_paytran_ds3 set checkno=@checkno where driver=@driver and carno=@carno
 		if len(@checkno)>0
-			update #z_paytran_ds3 set pno='0' where driverno=@driverno
+			update #z_paytran_ds3 set pno='0' where driver=@driver
 		fetch next from cursor_table
-		into @driverno,@carno
+		into @driver,@carno
 	end
 	close cursor_table
 	deallocate cursor_table
 
 	declare cursor_table cursor for
-	select driverno,min(pno),SUM([money]),SUM(plusmoney),SUM(minusmoney),sum(tolls) from #z_paytran_ds3 group  by  driverno
+	select driver,min(pno),SUM([money]),SUM(plusmoney),SUM(minusmoney),sum(tolls) from #z_paytran_ds3 group  by  driver
 	open cursor_table
 	fetch next from cursor_table
-	into @driverno,@pno,@money,@plusmoney,@minusmoney,@tolls
+	into @driver,@pno,@money,@plusmoney,@minusmoney,@tolls
 	while(@@FETCH_STATUS <> -1)
 	begin
-		insert into #z_paytran_ds3 (gno,pno,driverno,[money],plusmoney,minusmoney,tolls)values('1',@pno,@driverno,@money,@plusmoney,@minusmoney,@tolls)	
+		insert into #z_paytran_ds3 (gno,pno,driver,[money],plusmoney,minusmoney,tolls)values('1',@pno,@driver,@money,@plusmoney,@minusmoney,@tolls)	
 		fetch next from cursor_table
-		into @driverno,@pno,@money,@plusmoney,@minusmoney,@tolls
+		into @driver,@pno,@money,@plusmoney,@minusmoney,@tolls
 	end
 	close cursor_table
 	deallocate cursor_table
@@ -903,50 +903,50 @@ z_paytran_ds3:--z_paytran_ds3
 	
 	delete #z_paytran_ds3 where gno='3'
 	----------------------------------------------------------
-	set @cmd='@!#@@WWWQ!@'
-	declare cursor_table cursor for
-	select driverno,carno from #z_paytran_ds3 order by pno,driverno,gno,carno
-	open cursor_table
-	fetch next from cursor_table
-	into @driverno,@carno
-	while(@@FETCH_STATUS <> -1)
-	begin
-		if(@cmd!=@driverno)
-		begin
-			update #z_paytran_ds3 set xxx=driverno,yyy=driver where driverno=@driverno and carno=@carno	
-		end		
-		set @cmd=@driverno
-		fetch next from cursor_table
-		into @driverno,@carno
-	end
-	close cursor_table
-	deallocate cursor_table
+	--set @cmd='@!#@@WWWQ!@'
+	--declare cursor_table cursor for
+	--select driver,carno from #z_paytran_ds3 order by pno,driver,gno,carno
+	--open cursor_table
+	--fetch next from cursor_table
+	--into @driverno,@carno
+	--while(@@FETCH_STATUS <> -1)
+	--begin
+	--	if(@cmd!=@driverno)
+	--	begin
+	--		update #z_paytran_ds3 set xxx=driverno,yyy=driver where driver=@driverno and carno=@carno	
+	--	end		
+	--	set @cmd=@driverno
+	--	fetch next from cursor_table
+	--	into @driverno,@carno
+	--end
+	--close cursor_table
+	--deallocate cursor_table
 	----------------------------------------------------------------------------------------------
 
 	declare cursor_table cursor for
-	select driverno,count(1) n from #z_paytran_ds3 group by driverno
+	select driver,count(1) n from #z_paytran_ds3 group by driver
 	open cursor_table
 	fetch next from cursor_table
-	into @driverno,@n
+	into @driver,@n
 	while(@@FETCH_STATUS <> -1)
 	begin
 		while @n%@pagecount !=0
 		begin
-			insert into #z_paytran_ds3(pno,gno,driverno)values('1','1',@driverno)
+			insert into #z_paytran_ds3(pno,gno,driver)values('1','1',@driver)
 			set @n = @n + 1
 		end
 		fetch next from cursor_table
-		into @driverno,@n
+		into @driver,@n
 	end
 	close cursor_table
 	deallocate cursor_table
 	
-	select gno,carteamno,driverno,driver,xxx,yyy,carno,checkno,pno
+	select pno,gno,carteamno,driverno dda,isnull(driver,'') ddb,carno,checkno,pno
 	,dbo.getComma(case when len(carno)>0 or gno='2' then isnull([money],0) else [money] end,0) [money]
 	,dbo.getComma(case when len(carno)>0 or gno='2' then isnull([plusmoney],0) else [plusmoney] end,0) pm 
 	,dbo.getComma(case when len(carno)>0 or gno='2' then isnull([minusmoney],0) else [minusmoney] end,0) mm  
 	,dbo.getComma(case when len(carno)>0 or gno='2' then isnull([tolls],0) else [tolls] end,0) tolls
 	,dbo.getComma(case when len(carno)>0 or gno='2' then isnull([total],0) else [total] end,0) total
-	from #z_paytran_ds3 order by pno,driverno,gno,isnull(carno,char(255))
+	from #z_paytran_ds3 order by pno,isnull(driver,''),gno,isnull(carno,char(255))
 
 	drop table #z_paytran_ds3;
