@@ -941,7 +941,7 @@ z_paytran_ds3:--z_paytran_ds3
 	close cursor_table
 	deallocate cursor_table
 	
-	select pno,gno,carteamno,driverno dda,isnull(driver,'') ddb,carno,checkno,pno
+	select pno,gno,carteamno,driverno dda,case when len(driverno)>0 then isnull(driver,'') else '' end ddb,carno,checkno,pno
 	,dbo.getComma(case when len(carno)>0 or gno='2' then isnull([money],0) else [money] end,0) [money]
 	,dbo.getComma(case when len(carno)>0 or gno='2' then isnull([plusmoney],0) else [plusmoney] end,0) pm 
 	,dbo.getComma(case when len(carno)>0 or gno='2' then isnull([minusmoney],0) else [minusmoney] end,0) mm  
