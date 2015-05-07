@@ -994,12 +994,12 @@ z_paytran_ds4:--z_paytran_ds4  ref z_paytran_ds3
 	declare @checkno  nvarchar(20)
 	declare @pno nvarchar(1)
 	----------------------------------------------------------------------------------------------------------------------------
-	IF OBJECT_ID('tempdb..#z_paytran_ds3')is not null
+	IF OBJECT_ID('tempdb..#z_paytran_ds4')is not null
 	BEGIN
-		set @cmd = 'drop table #z_paytran_ds3'
+		set @cmd = 'drop table #z_paytran_ds4'
 		EXECUTE sp_executesql @cmd
 	END
-	create table #z_paytran_ds3(
+	create table #z_paytran_ds4(
 		gno nvarchar(1),
 		pno nvarchar(1),
 		driverno nvarchar(20),
@@ -1013,12 +1013,13 @@ z_paytran_ds4:--z_paytran_ds4  ref z_paytran_ds3
 		checkno nvarchar(20),
 		tolls  float,
 		xxx nvarchar(20),
-		yyy nvarchar(20)
+		yyy nvarchar(20),
+		memo nvarchar(max)
 	)
 
-	insert into #z_paytran_ds3
+	insert into #z_paytran_ds4
 	select '0','1',isnull(a.driverno,''),isnull(b.namea,''),isnull(a.carno,''),isnull(a.carteamno,'')
-	,sum(ISNULL(a.total2,0)),0,0,0,'',sum(isnull(a.tolls,0)),'',''
+	,sum(ISNULL(a.total2,0)),0,0,0,'',sum(isnull(a.tolls,0)),'','',''
 	from view_trans a
 	left join driver b on a.driverno=b.noa 
 	left join calctypes d  on a.calctype=d.noa+d.noq
@@ -1075,13 +1076,13 @@ z_paytran_ds4:--z_paytran_ds4  ref z_paytran_ds3
 	into @carteamno,@driverno,@carno,@plusmoney,@minusmoney
 	while(@@FETCH_STATUS <> -1)
 	begin
-		if not exists(select * from #z_paytran_ds3 where carteamno=@carteamno and driverno=@driverno and carno=@carno)
+		if not exists(select * from #z_paytran_ds4 where carteamno=@carteamno and driverno=@driverno and carno=@carno)
 		begin
 			set @driver=''
 			select @driver=namea from driver where noa=@driverno
-			insert into #z_paytran_ds3(gno,pno,driverno,driver,carno,carteamno)values('0','1',@driverno,@driver,@carno,@carteamno)
+			insert into #z_paytran_ds4(gno,pno,driverno,driver,carno,carteamno)values('0','1',@driverno,@driver,@carno,@carteamno)
 		end
-		update #z_paytran_ds3 set plusmoney=@plusmoney,minusmoney=@minusmoney where carteamno=@carteamno and driverno=@driverno and carno=@carno
+		update #z_paytran_ds4 set plusmoney=@plusmoney,minusmoney=@minusmoney where carteamno=@carteamno and driverno=@driverno and carno=@carno
 		fetch next from cursor_table
 		into @carteamno,@driverno,@carno,@plusmoney,@minusmoney
 	end
@@ -1090,7 +1091,7 @@ z_paytran_ds4:--z_paytran_ds4  ref z_paytran_ds3
 	--------------------------------------------------------------------
 	
 	declare cursor_table cursor for
-	select driver,carno from #z_paytran_ds3 group  by  driver,carno
+	select driver,carno from #z_paytran_ds4 group  by  driver,carno
 	open cursor_table
 	fetch next from cursor_table
 	into @driver,@carno
@@ -1105,64 +1106,53 @@ z_paytran_ds4:--z_paytran_ds4  ref z_paytran_ds3
 		and (a.datea between @t_bdate and @t_edate) 
 		and len(isnull(a.checkno,''))>0
 		 
-		update #z_paytran_ds3 set checkno=@checkno where driver=@driver and carno=@carno
+		update #z_paytran_ds4 set checkno=@checkno where driver=@driver and carno=@carno
 		if len(@checkno)>0
-			update #z_paytran_ds3 set pno='0' where driver=@driver
+			update #z_paytran_ds4 set pno='0' where driver=@driver
 		fetch next from cursor_table
 		into @driver,@carno
 	end
 	close cursor_table
 	deallocate cursor_table
 
+	declare @bdate datetime = cast(dbo.ChineseEraName2AD( left(@t_bdate,6)+'/01') as datetime)
+	declare @edate datetime = dateadd(MM,1,@bdate)
+	declare @nn int = datediff(DD,@bdate,@edate)
+	
 	declare cursor_table cursor for
-	select driver,min(pno),SUM([money]),SUM(plusmoney),SUM(minusmoney),sum(tolls) from #z_paytran_ds3 group  by  driver
+	select driver,min(pno),SUM([money]),SUM(plusmoney),SUM(minusmoney),sum(tolls) from #z_paytran_ds4 group  by  driver
 	open cursor_table
 	fetch next from cursor_table
 	into @driver,@pno,@money,@plusmoney,@minusmoney,@tolls
 	while(@@FETCH_STATUS <> -1)
 	begin
-		insert into #z_paytran_ds3 (gno,pno,driver,[money],plusmoney,minusmoney,tolls)values('1',@pno,@driver,@money,@plusmoney,@minusmoney,@tolls)	
+		select @n = 0
+		select @n = COUNT(1)
+		from(select DISTINCT trandate from view_trans where left(datea,6) = left(@t_bdate,6) and driver=@driver) a
+		
+		insert into #z_paytran_ds4 (gno,pno,driver,[money],plusmoney,minusmoney,tolls,memo)
+		values('1',@pno,@driver,@money,@plusmoney,@minusmoney,@tolls,'休假 '+CAST(@nn-@n as nvarchar)+' 天')	
+
 		fetch next from cursor_table
 		into @driver,@pno,@money,@plusmoney,@minusmoney,@tolls
 	end
 	close cursor_table
 	deallocate cursor_table
 	--------------------------------------------------------------------
-	insert into #z_paytran_ds3 select '2','1',CHAR(255),CHAR(255),'','',SUM([money]),SUM(plusmoney),SUM(minusmoney),0,'',SUM(tolls),'','' from #z_paytran_ds3 where gno='0'
-	update #z_paytran_ds3 set total=isnull([money],0)+isnull(plusmoney,0)-isnull(minusmoney,0)+isnull(tolls,0)
+	insert into #z_paytran_ds4 
+	select '2','1',CHAR(255),CHAR(255),'','',SUM([money]),SUM(plusmoney),SUM(minusmoney),0,'',SUM(tolls),'','',''
+	from #z_paytran_ds4 where gno='0'
 	
-	--update #z_paytran_ds3 set gno='3' where gno='2'
-	--update #z_paytran_ds3 set gno='2' where gno='1'
-	--update #z_paytran_ds3 set gno='1' where gno='0'
+	update #z_paytran_ds4 set total=isnull([money],0)+isnull(plusmoney,0)-isnull(minusmoney,0)+isnull(tolls,0)
 	
-	--delete #z_paytran_ds3 where gno='3'
-	----------------------------------------------------------
-	--set @cmd='@!#@@WWWQ!@'
-	--declare cursor_table cursor for
-	--select driver,carno from #z_paytran_ds3 order by pno,driver,gno,carno
-	--open cursor_table
-	--fetch next from cursor_table
-	--into @driverno,@carno
-	--while(@@FETCH_STATUS <> -1)
-	--begin
-	--	if(@cmd!=@driverno)
-	--	begin
-	--		update #z_paytran_ds3 set xxx=driverno,yyy=driver where driver=@driverno and carno=@carno	
-	--	end		
-	--	set @cmd=@driverno
-	--	fetch next from cursor_table
-	--	into @driverno,@carno
-	--end
-	--close cursor_table
-	--deallocate cursor_table
-	----------------------------------------------------------------------------------------------
 
-	
-	select pno,gno,carteamno,driverno dda,case when len(driverno)>0 then isnull(driver,'') else '' end ddb,carno,checkno,pno
+	select pno,gno,carteamno,driverno dda,isnull(driver,'') ddb,carno,checkno,pno
 	,dbo.getComma([money],0) [money]
 	,dbo.getComma([plusmoney],0) pm 
 	,dbo.getComma([minusmoney],0) mm  
 	,dbo.getComma([tolls],0) tolls
 	,dbo.getComma([total],0) total
-	from #z_paytran_ds3 order by pno,isnull(driver,''),gno,isnull(carno,char(255));
+	,memo
+	from #z_paytran_ds4 order by pno,isnull(driver,''),gno,isnull(carno,char(255));
+
 
