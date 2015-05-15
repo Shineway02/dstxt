@@ -371,6 +371,7 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 		deallocate cursor_table2
 		---------------------------------------------------
 		--@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+		--依司機名稱合併列印
 		update @tmp set driverno=driver where driverno=@driverno
 		set @driverno = @driver
 		--@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
