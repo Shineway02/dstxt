@@ -370,6 +370,10 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 		close cursor_table2
 		deallocate cursor_table2
 		---------------------------------------------------
+		--@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+		update @tmp set driverno=driver where driverno=@driverno
+		set @driverno = @driver
+		--@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 		--總計
 		if((@curline%@rowline)+@endline>@rowline)
 		begin
