@@ -84,7 +84,7 @@ z_tran_ds05a:--z_tran_ds05a
 	" where a.datea  between  @t_bdate  and  @t_edate"+
 	"	and a.trandate  between  @t_btrandate  and  @t_etrandate"+
 	"	and a.custno  between  @t_bcustno   and  @t_ecustno"+
-	"	and a.driverno  between  @t_bdriverno   and  @t_edriverno"+
+	"	and isnull(a.driverno,'') between  @t_bdriverno   and  @t_edriverno"+
 	"	and (len(@t_carno)=0  or  a.carno=@t_carno)"+
 	"	and (len(@t_po)=0  or  a.po=@t_po)"+
 	"	and a.straddrno between @t_baddrno and @t_eaddrno"+
@@ -6028,7 +6028,7 @@ z_tran_ds07:--z_tran_ds07
 		" (a.datea between  @t_bdate and  @t_edate) and "+
 		" (a.trandate between  @t_btrandate and  @t_etrandate) and "+
 		" (a.custno  between  @t_bcustno   and  @t_ecustno) and "+
-		" (a.driverno  between  @t_bdriverno   and  @t_edriverno) and "+
+		" (isnull(a.driverno,'')  between  @t_bdriverno   and  @t_edriverno) and "+
 		" (len(@t_carno)=0  or  a.carno=@t_carno) and "+
 		" (len(@t_po)=0  or  a.po=@t_po) and "+
 		" (a.straddrno between @t_baddrno and @t_eaddrno) and"+
