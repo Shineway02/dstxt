@@ -7,6 +7,7 @@ z_trans_ds03:-- z_trans_ds03
 	declare @t_etrandate nvarchar(10) = case when '#non'=[5] then char(255) else [5] end
 	declare @t_bcustno nvarchar(20) = case when '#non'=[11] then '' else [11] end
 	declare @t_ecustno nvarchar(20) = case when '#non'=[12] then char(255) else [12] end
+	declare @t_pay nvarchar(max) = case when '#non'=[17] then '' else [17] end
 	declare @t_cno nvarchar(20) 
 	select top 1 @t_cno = noa from acomp order by noa
 	------------------------------------------------------------------------------------
@@ -44,9 +45,13 @@ z_trans_ds03:-- z_trans_ds03
 		,a.accy,a.noa,a.custno,a.trandate,a.carno,a.straddr,a.product,a.mount,a.price,a.custdiscount
 		,a.total,a.memo
 	from view_trans a
+	left join view_trds b on a.noa=b.tranno
 	where a.trandate between @t_btrandate and @t_etrandate
 	and a.datea between @t_bdate and @t_edate
 	and a.custno between @t_bcustno and @t_ecustno
+	and (len(@t_pay)=0 
+		or (charindex(',pay,',','+@t_pay+',')>0 and b.noa is not null)
+		or (charindex(',unpay,',','+@t_pay+',')>0 and b.noa is null))
 	----------------------------------------------------------------------------------------------
 	insert into @tmp(gno,pno,custno,mount,total)
 	select '3','3',custno,SUM(isnull(mount,0)),SUM(isnull(total,0))
@@ -119,6 +124,8 @@ z_trans_ds02:-- z_trans_ds02
 	declare @t_bdriverno nvarchar(20) = case when '#non'=[15] then '' else [15] end
 	declare @t_edriverno nvarchar(20) = case when '#non'=[16] then char(255) else [16] end
 	declare @t_carno nvarchar(max) = case when '#non'=[6] then '' else [6] end
+	declare @t_pay nvarchar(max) = case when '#non'=[17] then '' else [17] end
+	declare @t_pay2 nvarchar(max) = case when '#non'=[18] then '' else [18] end
 	------------------------------------------------------------------------------------
 	declare @tmp table(
 		gno nvarchar(10),
@@ -152,10 +159,18 @@ z_trans_ds02:-- z_trans_ds02
 		,ROUND(isnull(mount2,0)*(isnull(price2,0)+isnull(price3,0)),0)
 		,isnull(overw,0),isnull(overh,0),total2,a.sender
 	from view_trans a
+	left join view_tres b on a.noa=b.tranno
+	outer apply(select top 1 * from pays where vccno=b.noa ) c
 	where isnull(a.datea,'') between @t_bdate and @t_edate
 	and isnull(a.trandate,'') between @t_btrandate and @t_etrandate 
 	and ISNULL(a.driverno,'') between @t_bdriverno and @t_edriverno
 	and (len(@t_carno)=0 or CHARINDEX(','+a.carno+',',','+@t_carno+',')>0)
+	and (len(@t_pay)=0 
+		or (charindex(',pay,',','+@t_pay+',')>0 and b.noa is not null)
+		or (charindex(',unpay,',','+@t_pay+',')>0 and b.noa is null))
+	and (len(@t_pay2)=0 
+		or (charindex(',pay,',','+@t_pay2+',')>0 and c.noa is not null)
+		or (charindex(',unpay,',','+@t_pay2+',')>0 and c.noa is null))
 	----------------------------------------------------------------------------------
 	update @tmp set tot2 = round(tot1*overw/100,0)
 	update @tmp set tot3 = tot1 - tot2 
