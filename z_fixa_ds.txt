@@ -62,6 +62,27 @@ z_fixa_ds07:--z_fixa_ds07
 		where a.datea between @t_bdate and @t_edate
 			and (len(@t_carno)=0 or a.carno=@t_carno)
 			and (a.tggno between @t_btggno and @t_etggno)
+		union all                                                          
+		select '3' gno,'1' pno,'tire_ds',a.noa,a.datea,a.tggno,a.carno,a.cardno,'','','工資','','','',a.wmoney,a.wmoney,'','',''
+		from tire a 
+		where a.datea between @t_bdate and @t_edate
+			and (len(@t_carno)=0 or a.carno=@t_carno)
+			and (a.tggno between @t_btggno and @t_etggno)
+			and ISNULL(a.wmoney,0)!=0
+		union all                                                          
+		select '3' gno,'1' pno,'tire_ds',a.noa,a.datea,a.tggno,a.carno,a.cardno,'','','材料','','','',a.dmoney,a.dmoney,'','',''
+		from tire a 
+		where a.datea between @t_bdate and @t_edate
+			and (len(@t_carno)=0 or a.carno=@t_carno)
+			and (a.tggno between @t_btggno and @t_etggno)
+			and ISNULL(a.dmoney,0)!=0
+		union all                                                          
+		select '3' gno,'1' pno,'tire_ds',a.noa,a.datea,a.tggno,a.carno,a.cardno,'','','費用','','','',a.emoney,a.emoney,'','',''
+		from tire a 
+		where a.datea between @t_bdate and @t_edate
+			and (len(@t_carno)=0 or a.carno=@t_carno)
+			and (a.tggno between @t_btggno and @t_etggno)
+			and ISNULL(a.emoney,0)!=0
 		) a	
 	-------------------------------------------------------------------------------------------------
 	insert into @tmp(gno,pno,carno,wmoney,cmoney,dmoney,emoney,tax,discount)
@@ -178,6 +199,27 @@ z_fixa_ds06:--z_fixa_ds06  (FIXA,FIXIN)全算、(FIXOUT)只算工資費用、(TI
 		where a.datea between @t_bdate and @t_edate
 			and (len(@t_carno)=0 or a.carno=@t_carno)
 			and (a.tggno between @t_btggno and @t_etggno)
+		union all                                                          
+		select '3' gno,'1' pno,'tire_ds',a.noa,a.datea,a.tggno,a.carno,a.cardno,'','','工資','','','',a.wmoney,a.wmoney,''
+		from tire a 
+		where a.datea between @t_bdate and @t_edate
+			and (len(@t_carno)=0 or a.carno=@t_carno)
+			and (a.tggno between @t_btggno and @t_etggno)
+			and ISNULL(a.wmoney,0)!=0
+		union all                                                          
+		select '3' gno,'1' pno,'tire_ds',a.noa,a.datea,a.tggno,a.carno,a.cardno,'','','材料','','','',a.dmoney,a.dmoney,''
+		from tire a 
+		where a.datea between @t_bdate and @t_edate
+			and (len(@t_carno)=0 or a.carno=@t_carno)
+			and (a.tggno between @t_btggno and @t_etggno)
+			and ISNULL(a.dmoney,0)!=0
+		union all                                                          
+		select '3' gno,'1' pno,'tire_ds',a.noa,a.datea,a.tggno,a.carno,a.cardno,'','','費用','','','',a.emoney,a.emoney,''
+		from tire a 
+		where a.datea between @t_bdate and @t_edate
+			and (len(@t_carno)=0 or a.carno=@t_carno)
+			and (a.tggno between @t_btggno and @t_etggno)
+			and ISNULL(a.emoney,0)!=0
 		) a
 	-------------------------------------------------------------------------------------------------
 	insert into @tmp(gno,pno,tggno,wmoney,cmoney,dmoney,emoney,tax,discount)
