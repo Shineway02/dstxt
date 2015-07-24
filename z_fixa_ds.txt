@@ -55,15 +55,14 @@ z_fixa_ds07:--z_fixa_ds07
 		where a.outdate between @t_bdate and @t_edate
 			and (len(@t_carno)=0 or a.carno=@t_carno)
 			and (a.tggno between @t_btggno and @t_etggno)
-		union all
-		select '3' gno,'1' pno,'tire_ds',a.noa,a.datea,a.tggno,a.carno,a.cardno,'','','','','','',b.price,0,b.memo,b.btireno,b.etireno
+		union all                                                          
+		select '3' gno,'1' pno,'tire_ds',a.noa,a.datea,a.tggno,a.carno,a.cardno,b.etireno,'',isnull(b.[action],'')+ISNULL(b.etireno,''),'','','',b.price,b.price,b.memo,b.btireno,b.etireno
 		from tire a 
 		left join tires b on a.noa=b.noa
 		where a.datea between @t_bdate and @t_edate
 			and (len(@t_carno)=0 or a.carno=@t_carno)
 			and (a.tggno between @t_btggno and @t_etggno)
-		) a
-		
+		) a	
 	-------------------------------------------------------------------------------------------------
 	insert into @tmp(gno,pno,carno,wmoney,cmoney,dmoney,emoney,tax,discount)
 	select '4','2',a.carno,SUM(isnull(wmoney,0)),SUM(isnull(cmoney,0)),SUM(isnull(dmoney,0)),SUM(isnull(emoney,0)),SUM(isnull(tax,0)),SUM(isnull(discount,0))
@@ -79,7 +78,7 @@ z_fixa_ds07:--z_fixa_ds07
 			where a.outdate between @t_bdate and @t_edate
 				and (len(@t_carno)=0 or a.carno=@t_carno)
 		union all
-		select isnull(a.carno,''),ISNULL(wmoney,0),0,ISNULL(dmoney,0),ISNULL(emoney,0) ,0,0
+		select isnull(a.carno,''),ISNULL(wmoney,0),ISNULL(cmoney,0),ISNULL(dmoney,0),ISNULL(emoney,0) ,0,0
 		from tire a 
 			where  a.datea between @t_bdate and @t_edate
 				and (a.tggno between @t_btggno and @t_etggno)
@@ -172,6 +171,13 @@ z_fixa_ds06:--z_fixa_ds06  (FIXA,FIXIN)全算、(FIXOUT)只算工資費用、(TI
 		where a.outdate between @t_bdate and @t_edate
 			and (len(@t_carno)=0 or a.carno=@t_carno)
 			and (ISNULL(b.typea,'')='工資' or ISNULL(b.typea,'')='費用')
+		union all                                                          
+		select '3' gno,'1' pno,'tire_ds',a.noa,a.datea,a.tggno,a.carno,a.cardno,b.etireno,'',isnull(b.[action],'')+ISNULL(b.etireno,''),'','','',0,0,b.memo
+		from tire a 
+		left join tires b on a.noa=b.noa
+		where a.datea between @t_bdate and @t_edate
+			and (len(@t_carno)=0 or a.carno=@t_carno)
+			and (a.tggno between @t_btggno and @t_etggno)
 		) a
 	-------------------------------------------------------------------------------------------------
 	insert into @tmp(gno,pno,tggno,wmoney,cmoney,dmoney,emoney,tax,discount)
