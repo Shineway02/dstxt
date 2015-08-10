@@ -1538,7 +1538,7 @@ z_tre_ds02:--z_tre_ds02
 			insert into @tmp(page,n,gno,driverno,driver
 			,g31,g32,g33,g34,g35,g36,g37,g38,g39,g3a)
 			values(@page,@n%@rowline,'4',@driverno,@driver
-			,CAST(@recno+1 as nvarchar),@trandate,@carno,@addr,@product
+			,CAST(@recno+1 as nvarchar),@trandate,@carno,isnull(@addr,'')+' '+isnull(@product,''),''
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money, case when @mount>0 then floor(@mount) else ceiling(@mount) end),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3)
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@price)),1)),4,12))+'.'+RIGHT(CAST(@price as nvarchar),3) 
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@total),1)),4,12)),@po
