@@ -161,6 +161,9 @@ z_carcs_ds02:-- z_carcs_ds02 carcsb
 	declare @t_carno nvarchar(max) = case when '#non'=[6] then '' else [6] end
 	declare @t_tggno nvarchar(max) = case when '#non'=[7] then '' else [7] end
 	declare @t_cardealno nvarchar(max) = case when '#non'=[8] then '' else [8] end
+	declare @t_boatno nvarchar(max) = case when '#non'=[9] then '' else [9] end
+	declare @t_bdriverno nvarchar(max) = case when '#non'=[10] then '' else [10] end
+	declare @t_edriverno nvarchar(max) = case when '#non'=[11] then char(255) else [11] end
     -------------------------------------------------------------------------------------------
     declare @string nvarchar(max)
 	declare @n int
@@ -284,6 +287,7 @@ z_carcs_ds02:-- z_carcs_ds02 carcsb
 	and (not exists(select * from #carno) or exists(select * from #carno where noa=a.carno))
 	and (not exists(select * from #tggno) or exists(select * from #tggno where noa=a.tggno))
 	and (not exists(select * from #cardealno) or exists(select * from #cardealno where noa=a.cardealno))
+	and isnull(a.driverno,'') between @t_bdriverno and @t_edriverno
 	---------------------------------------------------------------------------------------------------------
 	insert into @tmp(trandate,mount,total,mount2,total2)
 	select CHAR(255),SUM(ISNULL(mount,0)),SUM(ISNULL(total,0)),SUM(ISNULL(mount2,0)),SUM(ISNULL(total2,0)) from @tmp
