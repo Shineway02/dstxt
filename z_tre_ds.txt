@@ -21,6 +21,7 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 	set @t_carteamno = case when '#non'=[8] then '' else [8] end
 	set @t_acomp = case when '#non'=[9] then '' else [9] end
 	-------------------------------------------------------------------------------
+	-------------------------------------------------------------------------------
 	declare @string nvarchar(max)
 	declare @n int
 	--解析要計算的種類
@@ -111,7 +112,7 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 	)
 
 	set @cmd = 
-	" select '1',b.noa,a.tranno,a.trannoq,d.datea,d.trandate,d.carno,d.driverno,d.driver,b.carteamno,g.team"+
+	" select '1',b.noa,a.tranno,a.trannoq,d.datea,d.trandate,d.carno,d.driver,d.driver,b.carteamno,g.team"+
 	"	,b.carchgno,isnull(b.tggno,''),b.tgg,e.nick,d.custno,f.comp,f.nick,d.straddrno,d.straddr,d.uccno,d.product"+
 	"	,d.inmount,d.pton,d.mount,d.price,d.total"+
 	"	,d.outmount,d.pton2,d.mount2,d.price2,d.price3,d.discount,d.total2"+
@@ -124,6 +125,7 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 	" left join cust f on d.custno=f.noa"+
 	" left join carteam g on b.carteamno=g.noa"+
 	" where (b.noa is not null)"+
+	" and len(d.driverno)>0"+
 	" and (isnull(b.datea,0) between @t_bdate and @t_edate)"+
 	" and (isnull(b.driverno,0) between @t_bdriverno and @t_edriverno)"
 	insert into #z_tre_ds02 (pno,treno,tranno,trannoq,datea,trandate,carno,driverno,driver,carteamno,carteam
@@ -217,7 +219,8 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 		g52 nvarchar(max), -- g38 sum
 		g53 nvarchar(max), -- g44 sum
 		g54 nvarchar(max), -- g45 sum
-		g55 nvarchar(max) -- g38 + g44 - g45
+		g55 nvarchar(max), -- g38 + g44 - g45
+		memo nvarchar(max)
 	)
 	--------------------------------------------------------------------------------------------
 	declare @rowline int -- 每頁可用行數
@@ -225,7 +228,7 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 	declare @page int
 	declare @recno int
 	declare @curline int -- 當前行數
-	set @rowline = 42
+	set @rowline = 41
 	set @endline = 2
 	set @page = 0
 	
@@ -251,9 +254,10 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 	declare @totcount int
 	
 	declare cursor_table cursor for
-	select isnull(a.driverno,'') a,isnull(b.namea,'') from #z_tre_ds02  a 
+	select isnull(b.namea,'') a,isnull(b.namea,'') from #z_tre_ds02  a 
 	left join driver b on a.driverno=b.noa
-	group by isnull(a.driverno,''),isnull(b.namea,'') order by a
+	where len(isnull(b.namea,''))>0
+	group by isnull(b.namea,''),isnull(b.namea,'') order by a
 	open cursor_table
 	fetch next from cursor_table
 	into @driverno,@driver
@@ -267,10 +271,10 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 		select @totcount = 0
 		select @totcount=count(1) from #z_tre_ds02  where driverno=@driverno and pno='1'
 		select @totcount = isnull(@totcount,0)
-		if @totcount>0
+		if @totcount>=0
 		begin
-			insert into @tmp(page,n,gno,driverno,driver)
-			select @page,@n%@rowline,'1',@driverno,@driver
+			insert into @tmp(page,n,gno,driverno,driver,memo)
+			select @page,@n%@rowline,'1',@driverno,@driver,'A1'
 			set @curline = @curline + 1
 			set @n = @n + 1
 		end
@@ -303,6 +307,7 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 				begin
 					insert into @tmp(page,n,gno,driverno,driver)
 					select @page,@n%@rowline,'1',@driverno,@driver
+					set @recno = @recno + 1
 					set @curline = @curline + 1
 					set @n = @n + 1
 				end
@@ -406,7 +411,17 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@plus),1)),4,12))
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@minus),1)),4,12))
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@total),1)),4,12)))
-	
+		
+		set @curline = @curline + 1
+		set @n = @n + 1
+		insert into @tmp(page,n,gno,driverno,driver,g51,g52,g53,g54,g55)
+			values(@page,@n%@rowline,'7',@driverno,@driver
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money, case when @mount>0 then floor(@mount) else ceiling(@mount) end),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3)
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@money),1)),4,12))
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@plus),1)),4,12))
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@minus),1)),4,12))
+			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@total),1)),4,12)))
+			
 		update @tmp set cpage=page+1,tpage=@page+1 where driverno=@driverno
 		---------------------------------------------------
 		fetch next from cursor_table
@@ -415,9 +430,11 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 	close cursor_table
 	deallocate cursor_table	
 
+	--select * from @tmp order by driverno,page,n
+
 	select @t_acomp acomp,* from @tmp order by driverno,page,n
 	--------------------------------------------------------------------------------------------
-	drop table #z_tre_ds02 ;
+	drop table #z_tre_ds02;
 	
 z_tre_ds04:--z_tre_ds04  ref z_tre_ds02
 	SET QUOTED_IDENTIFIER OFF
