@@ -255,7 +255,7 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 	
 	declare cursor_table cursor for
 	select isnull(b.namea,'') a,isnull(b.namea,'') from #z_tre_ds02  a 
-	left join driver b on a.driverno=b.noa
+	left join driver b on a.driver=b.namea
 	where len(isnull(b.namea,''))>0
 	group by isnull(b.namea,''),isnull(b.namea,'') order by a
 	open cursor_table
