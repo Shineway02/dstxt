@@ -342,7 +342,7 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 		declare cursor_table2 cursor for
 		select datea2,ltrim(rtrim(plusitem))+ltrim(rtrim(minusitem)),plusmoney,minusmoney,memo2
 		from #z_tre_ds02  
-		where driverno=@driverno and pno='2' order by datea2
+		where driver=@driver and pno='2' order by datea2
 		open cursor_table2
 		fetch next from cursor_table2
 		into @datea,@item,@plus,@minus,@memo
