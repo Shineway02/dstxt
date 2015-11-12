@@ -21,7 +21,6 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 	set @t_carteamno = case when '#non'=[8] then '' else [8] end
 	set @t_acomp = case when '#non'=[9] then '' else [9] end
 	-------------------------------------------------------------------------------
-	-------------------------------------------------------------------------------
 	declare @string nvarchar(max)
 	declare @n int
 	--解析要計算的種類
@@ -110,24 +109,23 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 		ztotal2 float,
 		po nvarchar(50)
 	)
-
 	set @cmd = 
-	" select '1',b.noa,a.tranno,a.trannoq,d.datea,d.trandate,d.carno,d.driver,d.driver,b.carteamno,g.team"+
-	"	,b.carchgno,isnull(b.tggno,''),b.tgg,e.nick,d.custno,f.comp,f.nick,d.straddrno,d.straddr,d.uccno,d.product"+
-	"	,d.inmount,d.pton,d.mount,d.price,d.total"+
-	"	,d.outmount,d.pton2,d.mount2,d.price2,d.price3,d.discount,d.total2"+
-	"	,d.tolls,d.memo,d.po"+
-	" from view_tre"+@t_accy+" b"+
-	" left join view_tres"+@t_accy+" a on a.noa=b.noa"+
-	" left join #carteam c on b.carteamno=c.noa"+
-	" left join view_trans"+@t_accy+" d on a.tranno=d.noa and a.trannoq=d.noq"+
-	" left join tgg e on b.tggno=e.noa"+
-	" left join cust f on d.custno=f.noa"+
-	" left join carteam g on b.carteamno=g.noa"+
-	" where (b.noa is not null)"+
-	" and len(d.driverno)>0"+
-	" and (isnull(b.datea,0) between @t_bdate and @t_edate)"+
-	" and (isnull(b.driverno,0) between @t_bdriverno and @t_edriverno)"
+	" select '1',b.noa,a.tranno,a.trannoq,d.datea,d.trandate,d.carno,d.driver,d.driver,b.carteamno,g.team
+		,b.carchgno,isnull(b.tggno,''),b.tgg,e.nick,d.custno,f.comp,f.nick,d.straddrno,d.straddr,d.uccno,d.product
+		,d.inmount,d.pton,d.mount,d.price,d.total
+		,d.outmount,d.pton2,d.mount2,d.price2,d.price3,d.discount,d.total2
+		,d.tolls,d.memo,d.po
+	 from view_tre b
+	 left join view_tres a on a.accy=b.accy and a.noa=b.noa
+	 left join #carteam c on b.carteamno=c.noa
+	 left join view_trans d on a.tranno=d.noa and a.trannoq=d.noq
+	 left join tgg e on b.tggno=e.noa
+	 left join cust f on d.custno=f.noa
+	 left join carteam g on b.carteamno=g.noa
+	 where (b.noa is not null)
+	 --and len(d.driverno)>0
+	 and (isnull(b.datea,0) between @t_bdate and @t_edate)
+	 and (isnull(b.driverno,0) between @t_bdriverno and @t_edriverno)"
 	insert into #z_tre_ds02 (pno,treno,tranno,trannoq,datea,trandate,carno,driverno,driver,carteamno,carteam
 		,trecarchgno,tggno,tgg,tggnick,custno,cust,custnick,addrno,addr,productno,product
 		,inmount,pton,mount,price,total
@@ -167,7 +165,7 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 				begin
 					insert into #z_tre_ds02 (pno,treno,carno,driverno,driver,tggno,tgg,tggnick
 					,carchgno,datea2,plusitemno,plusitem,plusmoney,minusitemno,minusitem,minusmoney,memo2)
-					select '2',@treno,carno,driverno,driver,@tggno,@tgg,@tggnick
+					select '2',@treno,carno,driver,driver,@tggno,@tgg,@tggnick
 					,noa,datea,plusitemno,plusitem,plusmoney,minusitemno,minusitem,minusmoney,memo 
 					from carchg where noa=@string
 				end
@@ -252,6 +250,7 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 	declare @driver nvarchar(20)
 	
 	declare @totcount int
+	declare @xx int = 0--控制表頭不算到行數
 	
 	declare cursor_table cursor for
 	select isnull(b.namea,'') a,isnull(b.namea,'') from #z_tre_ds02  a 
@@ -267,6 +266,7 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 		set @curline = 0
 		set @recno = 0
 		set @n = 0
+		set @xx=0
 		--出車明細			
 		select @totcount = 0
 		select @totcount=count(1) from #z_tre_ds02  where driverno=@driverno and pno='1'
@@ -278,6 +278,7 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 			set @curline = @curline + 1
 			set @n = @n + 1
 		end
+		
 		
 		declare cursor_table2 cursor for
 		select trandate,carno,addr,product,mount2,isnull(price2,0)+isnull(price3,0),total2,po,discount
@@ -291,7 +292,7 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 			insert into @tmp(page,n,gno,driverno,driver
 			,g31,g32,g33,g34,g35,g36,g37,g38,g39,g3a)
 			values(@page,@n%@rowline,'4',@driverno,@driver
-			,CAST(@recno+1 as nvarchar),@trandate,@carno,@addr,@product
+			,CAST(@recno+1-@xx as nvarchar),@trandate,@carno,@addr,@product
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money, case when @mount>0 then floor(@mount) else ceiling(@mount) end),1)),4,12))+'.'+RIGHT(CAST(@mount as nvarchar),3) 
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,floor(@price)),1)),4,12))+'.'+RIGHT(CAST(@price as nvarchar),3) 
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@total),1)),4,12)),@po
@@ -307,6 +308,7 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 				begin
 					insert into @tmp(page,n,gno,driverno,driver)
 					select @page,@n%@rowline,'1',@driverno,@driver
+					set @xx = @xx + 1
 					set @recno = @recno + 1
 					set @curline = @curline + 1
 					set @n = @n + 1
@@ -318,6 +320,7 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 		close cursor_table2
 		deallocate cursor_table2
 		--加減項明細
+		set @xx = 0
 		select @totcount = 0
 		select @totcount=count(1) from #z_tre_ds02  where driverno=@driverno and pno='2'
 		select @totcount = isnull(@totcount,0)
@@ -335,6 +338,7 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 		
 			insert into @tmp(page,n,gno,driverno,driver)
 			select @page,@n%@rowline,'2',@driverno,@driver
+			
 			set @curline = @curline + 1
 			set @recno = 0
 			set @n = @n + 1
@@ -351,7 +355,7 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 			insert into @tmp(page,n,gno,driverno,driver
 			,g41,g42,g43,g44,g45,g46)
 			values(@page,@n%@rowline,'5',@driverno,@driver
-			,CAST(@recno+1 as nvarchar),@datea,@item
+			,CAST(@recno+1-@xx as nvarchar),@datea,@item
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@plus),1)),4,12))
 			,reverse(substring(reverse(convert(nvarchar(15),CONVERT(money,@minus),1)),4,12)),@memo)
 			set @recno = @recno + 1
@@ -365,6 +369,7 @@ z_tre_ds06:--z_tre_ds06  ref z_tre_ds02   papersize A4
 				begin
 					insert into @tmp(page,n,gno,driverno,driver)
 					select @page,@n%@rowline,'2',@driverno,@driver
+					set @xx = @xx + 1
 					set @curline = @curline + 1
 					set @n = @n + 1
 				end
